@@ -3,314 +3,561 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#6366f1">
+<meta name="theme-color" content="#1a1a2e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="VolHoraire">
 <link rel="manifest" href="manifest.json">
-<title>إدارة الحجم الساعي</title>
+<title>إدارة الحجم الساعي — قسم الإعلاميات</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-  :root {
-    --bg: #0f172a;
-    --surface: #1e293b;
-    --surface2: #263548;
-    --border: #334155;
-    --primary: #6366f1;
-    --primary-light: #818cf8;
-    --primary-dark: #4f46e5;
-    --accent: #10b981;
-    --accent2: #f59e0b;
-    --accent3: #ef4444;
-    --accent4: #3b82f6;
-    --text: #f1f5f9;
-    --text2: #94a3b8;
-    --text3: #64748b;
-    --radius: 14px;
-    --shadow: 0 4px 24px rgba(0,0,0,0.4);
-    --nav-h: 68px;
+:root {
+  --bg: #0d0d1a;
+  --bg2: #13132a;
+  --surface: #1a1a35;
+  --surface2: #1f1f40;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.12);
+
+  --indigo: #6366f1;
+  --indigo-light: #818cf8;
+  --indigo-dark: #4338ca;
+  --emerald: #10b981;
+  --amber: #f59e0b;
+  --rose: #f43f5e;
+  --sky: #0ea5e9;
+  --violet: #8b5cf6;
+  --teal: #14b8a6;
+
+  --text: #f0f0ff;
+  --text2: #a0a0c8;
+  --text3: #5a5a80;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --nav-h: 72px;
+  --topbar-h: 64px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 40px rgba(99,102,241,0.15);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  font-family: 'Tajawal', 'Cairo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-bottom: var(--nav-h);
+}
+
+/* ── GRID BG ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  height: var(--topbar-h);
+  background: rgba(13,13,26,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-logo {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--indigo), var(--violet));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+}
+.topbar-title { font-size: 17px; font-weight: 800; color: var(--text); }
+.topbar-sub { font-size: 11px; color: var(--indigo-light); font-weight: 500; margin-top: 1px; }
+.topbar-actions { display: flex; gap: 8px; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  height: var(--nav-h);
+  background: rgba(13,13,26,0.97);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 4px;
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 8px 4px; cursor: pointer;
+  border: none; background: none; color: var(--text3);
+  font-family: 'Tajawal', sans-serif; font-size: 10px; font-weight: 700;
+  transition: all 0.25s; border-radius: 12px; margin: 4px 2px;
+  position: relative;
+}
+.nav-icon { font-size: 20px; transition: transform 0.25s; }
+.nav-item.active { color: var(--indigo-light); }
+.nav-item.active .nav-icon { transform: scale(1.2) translateY(-2px); }
+.nav-item.active::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 30px; height: 3px; border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, var(--indigo), var(--violet));
+}
+
+/* ── PAGES ── */
+.page { display: none; padding: 16px; animation: fadeUp 0.3s ease; position: relative; z-index: 1; }
+.page.active { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── HERO BANNER ── */
+.hero-banner {
+  background: linear-gradient(135deg, #1a1a40 0%, #2d1b69 50%, #1a3a5c 100%);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-banner::before {
+  content: '';
+  position: absolute; top: -40px; left: -40px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+}
+.hero-banner::after {
+  content: '';
+  position: absolute; bottom: -30px; right: -30px;
+  width: 130px; height: 130px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%);
+}
+.hero-title { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 4px; position: relative; }
+.hero-sub { font-size: 13px; color: rgba(255,255,255,0.6); position: relative; }
+.hero-stats { display: flex; gap: 16px; margin-top: 16px; position: relative; }
+.hero-stat { text-align: center; }
+.hero-stat-val { font-size: 26px; font-weight: 900; color: #fff; line-height: 1; }
+.hero-stat-label { font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 600; margin-top: 2px; }
+
+/* ── STAT GRID ── */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.stat-card {
+  border-radius: var(--radius);
+  padding: 16px 14px;
+  position: relative; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.stat-card::after {
+  content: ''; position: absolute; top: -30px; right: -20px;
+  width: 90px; height: 90px; border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+}
+.stat-card.indigo { background: linear-gradient(135deg, #3730a3, #6366f1); }
+.stat-card.emerald { background: linear-gradient(135deg, #065f46, #10b981); }
+.stat-card.amber { background: linear-gradient(135deg, #92400e, #f59e0b); }
+.stat-card.sky { background: linear-gradient(135deg, #075985, #0ea5e9); }
+.stat-card.rose { background: linear-gradient(135deg, #881337, #f43f5e); }
+.stat-card.teal { background: linear-gradient(135deg, #134e4a, #14b8a6); }
+.stat-card.violet { background: linear-gradient(135deg, #4c1d95, #8b5cf6); }
+.stat-value { font-size: 30px; font-weight: 900; color: #fff; line-height: 1; }
+.stat-label { font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 600; margin-top: 4px; }
+.stat-icon { font-size: 22px; margin-bottom: 10px; }
+
+/* ── SECTION ── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+}
+.section-title { font-size: 17px; font-weight: 800; color: var(--text); }
+.section-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-size: 11px; font-weight: 800; color: var(--text2);
+  text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; border-radius: var(--radius-sm); border: none;
+  font-family: 'Tajawal', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--indigo-dark), var(--indigo));
+  color: #fff; box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+}
+.btn-primary:active { transform: scale(0.97); }
+.btn-success {
+  background: linear-gradient(135deg, #059669, var(--emerald));
+  color: #fff; box-shadow: 0 4px 14px rgba(16,185,129,0.3);
+}
+.btn-danger {
+  background: linear-gradient(135deg, #be123c, var(--rose));
+  color: #fff;
+}
+.btn-amber {
+  background: linear-gradient(135deg, #b45309, var(--amber));
+  color: #fff;
+}
+.btn-outline {
+  background: transparent;
+  color: var(--indigo-light);
+  border: 1.5px solid rgba(99,102,241,0.4);
+}
+.btn-ghost {
+  background: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-sm { padding: 7px 12px; font-size: 12px; border-radius: 8px; }
+.btn-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text2); cursor: pointer; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.btn-icon:hover { border-color: var(--border2); }
+
+/* ── LIST ITEMS ── */
+.list-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.list-item:active { transform: scale(0.99); }
+.list-item-icon {
+  width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.list-item-body { flex: 1; min-width: 0; }
+.list-item-title { font-size: 14px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-item-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.list-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.3px;
+}
+.badge-indigo { background: rgba(99,102,241,0.18); color: var(--indigo-light); border: 1px solid rgba(99,102,241,0.2); }
+.badge-emerald { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+.badge-amber { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+.badge-sky { background: rgba(14,165,233,0.15); color: #38bdf8; border: 1px solid rgba(14,165,233,0.2); }
+.badge-rose { background: rgba(244,63,94,0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.2); }
+.badge-violet { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.2); }
+
+/* ── PROGRESS ── */
+.progress-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(.16,1,.3,1); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: fadeIn 0.2s;
+}
+.modal {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  border: 1px solid var(--border2); border-bottom: none;
+  width: 100%; max-width: 580px;
+  max-height: 92vh; overflow-y: auto;
+  padding: 8px 20px 50px;
+  animation: slideUp 0.35s cubic-bezier(.16,1,.3,1);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle {
+  width: 44px; height: 4px; border-radius: 2px;
+  background: var(--border2); margin: 10px auto 20px;
+}
+.modal-title { font-size: 19px; font-weight: 900; margin-bottom: 20px; color: var(--text); }
+
+/* ── ALERT MODAL ── */
+.alert-modal {
+  background: var(--surface2);
+  border-radius: 18px;
+  border: 1px solid var(--border2);
+  width: calc(100% - 48px); max-width: 360px;
+  padding: 24px 20px;
+  margin: auto;
+  animation: popIn 0.3s cubic-bezier(.16,1,.3,1);
+}
+@keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.alert-icon { font-size: 40px; text-align: center; margin-bottom: 12px; }
+.alert-title { font-size: 17px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+.alert-msg { font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 20px; }
+
+/* ── FORM ── */
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 7px; }
+.form-input, .form-select {
+  width: 100%;
+  background: var(--bg2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px;
+  color: var(--text); font-family: 'Tajawal', sans-serif; font-size: 14px;
+  outline: none; transition: border-color 0.2s;
+  appearance: none; -webkit-appearance: none;
+}
+.form-input:focus, .form-select:focus { border-color: var(--indigo); }
+.form-input::placeholder { color: var(--text3); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-divider {
+  font-size: 11px; font-weight: 800; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  padding: 10px 0 6px; border-top: 1px solid var(--border); margin: 6px 0;
+}
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { background: var(--surface2); }
+th { padding: 12px 14px; text-align: right; font-weight: 800; color: var(--text2); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+td { padding: 12px 14px; border-top: 1px solid var(--border); color: var(--text); }
+tr:hover td { background: rgba(99,102,241,0.03); }
+
+/* ── TABS ── */
+.tabs {
+  display: flex; gap: 6px; margin-bottom: 16px;
+  overflow-x: auto; padding-bottom: 4px;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab-btn {
+  flex-shrink: 0; padding: 7px 16px; border-radius: 20px; border: none;
+  font-family: 'Tajawal', sans-serif; font-size: 12px; font-weight: 700;
+  cursor: pointer; background: var(--surface2); color: var(--text3);
+  border: 1px solid var(--border); transition: all 0.2s;
+}
+.tab-btn.active { background: var(--indigo); color: #fff; border-color: var(--indigo); box-shadow: 0 2px 10px rgba(99,102,241,0.3); }
+
+/* ── SEARCH ── */
+.search-box {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 11px 14px; margin-bottom: 14px;
+}
+.search-box input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-family: 'Tajawal', sans-serif; font-size: 14px;
+}
+.search-box input::placeholder { color: var(--text3); }
+
+/* ── CHART ── */
+.chart-wrap { position: relative; height: 220px; }
+.chart-wrap-lg { position: relative; height: 280px; }
+
+/* ── FORECAST ── */
+.forecast-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+}
+.forecast-label { font-size: 13px; font-weight: 700; width: 120px; flex-shrink: 0; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.forecast-track { flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+.forecast-val { font-size: 12px; font-weight: 800; width: 54px; text-align: left; flex-shrink: 0; }
+
+/* ── EMPTY ── */
+.empty { text-align: center; padding: 50px 20px; color: var(--text3); }
+.empty-icon { font-size: 52px; margin-bottom: 14px; opacity: 0.6; }
+.empty-text { font-size: 14px; font-weight: 700; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; top: 74px; left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 22px; border-radius: 50px;
+  font-size: 13px; font-weight: 700;
+  z-index: 500; white-space: nowrap;
+  animation: toastIn 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+@keyframes toastIn {
+  from { opacity:0; transform: translateX(-50%) translateY(-12px) scale(0.95); }
+  to { opacity:1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ── DISTRIBUTION CARD ── */
+.dist-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px;
+  margin-bottom: 10px;
+}
+.dist-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.dist-teacher { font-weight: 800; color: var(--text); }
+.dist-hours { font-size: 18px; font-weight: 900; }
+
+/* ── SLIDER ── */
+input[type=range] {
+  -webkit-appearance: none; width: 100%; height: 6px;
+  border-radius: 3px; background: var(--border2); outline: none;
+  accent-color: var(--indigo);
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--indigo); cursor: pointer;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.4);
+}
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+/* ── PAGE ACTIONS BAR ── */
+.page-actions {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
+}
+
+/* ── INFO BOX ── */
+.info-box {
+  background: rgba(99,102,241,0.08);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px; color: var(--indigo-light);
+  margin-bottom: 14px;
+}
+
+/* ── LOADING SPINNER ── */
+.spinner {
+  width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.7s linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════
+   PRINT STYLES
+══════════════════════════════════ */
+@media print {
+  body { background: #fff; color: #000; padding: 0; }
+  body::before { display: none; }
+  .topbar, .bottom-nav, .page-actions, .btn, .modal-overlay, .toast { display: none !important; }
+  .page { display: block !important; padding: 0; }
+  .page:not(.active) { display: none !important; }
+  .card, .list-item, .dist-card { background: #fff; border: 1px solid #ddd; box-shadow: none; }
+  .stat-card.indigo, .stat-card.emerald, .stat-card.amber, .stat-card.sky, .stat-card.violet, .stat-card.rose, .stat-card.teal {
+    background: #f8fafc !important; border: 1px solid #ddd;
+    -webkit-print-color-adjust: exact;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body {
-    font-family: 'Cairo', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-    padding-bottom: var(--nav-h);
-  }
-  /* ─── TOP BAR ─── */
-  .topbar {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(15,23,42,0.92);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 20px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .topbar-title { font-size: 18px; font-weight: 800; color: var(--text); }
-  .topbar-sub { font-size: 11px; color: var(--primary-light); font-weight: 500; }
-  .topbar-icon {
-    width: 38px; height: 38px; border-radius: 12px;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; flex-shrink: 0;
-  }
-  /* ─── BOTTOM NAV ─── */
-  .bottom-nav {
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-    background: rgba(19,28,45,0.97);
-    backdrop-filter: blur(16px);
-    border-top: 1px solid var(--border);
-    height: var(--nav-h);
-    display: flex; align-items: center;
-  }
-  .nav-item {
-    flex: 1; display: flex; flex-direction: column; align-items: center;
-    gap: 4px; padding: 8px 4px; cursor: pointer;
-    border: none; background: none; color: var(--text3);
-    font-family: 'Cairo', sans-serif; font-size: 10px; font-weight: 600;
-    transition: color 0.2s;
-  }
-  .nav-item .nav-icon { font-size: 22px; transition: transform 0.2s; }
-  .nav-item.active { color: var(--primary-light); }
-  .nav-item.active .nav-icon { transform: scale(1.15); }
-  /* ─── PAGES ─── */
-  .page { display: none; padding: 16px; animation: fadeIn 0.25s ease; }
-  .page.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  /* ─── CARDS ─── */
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
-  }
-  .card-title { font-size: 13px; font-weight: 700; color: var(--text2); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-  /* ─── STAT GRID ─── */
-  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-  .stat-card {
-    border-radius: var(--radius); padding: 16px 14px;
-    position: relative; overflow: hidden;
-  }
-  .stat-card::before {
-    content: ''; position: absolute; top: -20px; left: -20px;
-    width: 80px; height: 80px; border-radius: 50%;
-    background: rgba(255,255,255,0.06);
-  }
-  .stat-card.purple { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
-  .stat-card.green  { background: linear-gradient(135deg, #059669, #10b981); }
-  .stat-card.amber  { background: linear-gradient(135deg, #d97706, #f59e0b); }
-  .stat-card.blue   { background: linear-gradient(135deg, #2563eb, #3b82f6); }
-  .stat-card.red    { background: linear-gradient(135deg, #dc2626, #ef4444); }
-  .stat-card.teal   { background: linear-gradient(135deg, #0d9488, #14b8a6); }
-  .stat-value { font-size: 28px; font-weight: 900; color: #fff; }
-  .stat-label { font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 600; margin-top: 2px; }
-  .stat-icon { font-size: 24px; margin-bottom: 8px; }
-  /* ─── SECTION HEADER ─── */
-  .section-header {
-    display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
-  }
-  .section-title { font-size: 16px; font-weight: 800; color: var(--text); }
-  /* ─── BUTTONS ─── */
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 10px 18px; border-radius: 10px; border: none;
-    font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .btn-primary { background: var(--primary); color: #fff; }
-  .btn-primary:active { background: var(--primary-dark); transform: scale(0.97); }
-  .btn-success { background: var(--accent); color: #fff; }
-  .btn-danger { background: var(--accent3); color: #fff; }
-  .btn-outline { background: transparent; color: var(--primary-light); border: 1.5px solid var(--primary); }
-  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
-  .btn-icon { padding: 8px; border-radius: 10px; background: var(--surface2); border: none; color: var(--text2); cursor: pointer; font-size: 16px; }
-  /* ─── LIST ITEMS ─── */
-  .list-item {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
-    display: flex; align-items: center; gap: 12px;
-  }
-  .list-item-icon {
-    width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 18px;
-  }
-  .list-item-body { flex: 1; min-width: 0; }
-  .list-item-title { font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .list-item-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
-  .list-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
-  /* ─── BADGE ─── */
-  .badge {
-    display: inline-flex; align-items: center;
-    padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;
-  }
-  .badge-purple { background: rgba(99,102,241,0.2); color: var(--primary-light); }
-  .badge-green  { background: rgba(16,185,129,0.2); color: #34d399; }
-  .badge-amber  { background: rgba(245,158,11,0.2); color: #fbbf24; }
-  .badge-blue   { background: rgba(59,130,246,0.2); color: #60a5fa; }
-  .badge-red    { background: rgba(239,68,68,0.2); color: #f87171; }
-  /* ─── MODAL ─── */
-  .modal-overlay {
-    position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-    display: flex; align-items: flex-end; justify-content: center;
-    animation: fadeIn 0.2s;
-  }
-  .modal {
-    background: var(--surface); border-radius: 20px 20px 0 0;
-    border: 1px solid var(--border); border-bottom: none;
-    width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto;
-    padding: 24px 20px 40px; animation: slideUp 0.3s cubic-bezier(.16,1,.3,1);
-  }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--text); }
-  .modal-handle {
-    width: 40px; height: 4px; border-radius: 2px; background: var(--border);
-    margin: 0 auto 20px;
-  }
-  /* ─── FORM ─── */
-  .form-group { margin-bottom: 14px; }
-  .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 6px; }
-  .form-input, .form-select {
-    width: 100%; background: var(--bg); border: 1.5px solid var(--border);
-    border-radius: 10px; padding: 11px 14px; color: var(--text);
-    font-family: 'Cairo', sans-serif; font-size: 14px; outline: none;
-    transition: border-color 0.2s;
-  }
-  .form-input:focus, .form-select:focus { border-color: var(--primary); }
-  .form-input::placeholder { color: var(--text3); }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  /* ─── PROGRESS BAR ─── */
-  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
-  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-  /* ─── TABLE ─── */
-  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead { background: var(--surface2); }
-  th { padding: 12px 14px; text-align: right; font-weight: 700; color: var(--text2); font-size: 11px; white-space: nowrap; }
-  td { padding: 11px 14px; border-top: 1px solid var(--border); color: var(--text); }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-  /* ─── FORECAST CARD ─── */
-  .forecast-bar {
-    display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
-  }
-  .forecast-label { font-size: 13px; font-weight: 600; width: 130px; flex-shrink: 0; color: var(--text2); }
-  .forecast-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
-  .forecast-value { font-size: 12px; font-weight: 700; width: 50px; text-align: left; flex-shrink: 0; }
-  /* ─── EMPTY STATE ─── */
-  .empty { text-align: center; padding: 40px 20px; color: var(--text3); }
-  .empty-icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-text { font-size: 14px; font-weight: 600; }
-  /* ─── TOAST ─── */
-  .toast {
-    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
-    background: var(--accent); color: #fff; padding: 10px 20px;
-    border-radius: 30px; font-size: 13px; font-weight: 700;
-    z-index: 300; animation: toastIn 0.3s ease;
-    box-shadow: 0 4px 20px rgba(16,185,129,0.4);
-  }
-  @keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(-10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
-  /* ─── CHART ─── */
-  .chart-wrap { position: relative; height: 220px; }
-  /* ─── TABS ─── */
-  .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; }
-  .tab-btn {
-    flex-shrink: 0; padding: 8px 16px; border-radius: 20px; border: none;
-    font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700;
-    cursor: pointer; background: var(--surface2); color: var(--text3);
-    transition: all 0.2s;
-  }
-  .tab-btn.active { background: var(--primary); color: #fff; }
-  /* ─── SEARCH ─── */
-  .search-box {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 14px; margin-bottom: 14px;
-  }
-  .search-box input {
-    flex: 1; background: none; border: none; outline: none;
-    color: var(--text); font-family: 'Cairo', sans-serif; font-size: 14px;
-  }
-  .search-box input::placeholder { color: var(--text3); }
+  .stat-value, .stat-label { color: #000 !important; }
+  th { background: #f1f5f9 !important; color: #374151 !important; }
+  td { color: #374151 !important; border-color: #e5e7eb; }
+  .badge { border: 1px solid #ccc; }
+  .hero-banner { background: #f8fafc !important; }
+  .hero-title, .hero-stat-val { color: #000 !important; }
+  .section-title { color: #111 !important; }
+  .progress-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #print-header { display: block !important; }
+}
+#print-header {
+  display: none;
+  text-align: center; margin-bottom: 20px;
+  font-size: 20px; font-weight: 900; color: #1e293b;
+}
 </style>
 </head>
 <body>
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div>
-    <div class="topbar-title" id="pageTitle">لوحة القيادة</div>
-    <div class="topbar-sub">قسم الإعلاميات</div>
+  <div class="topbar-left">
+    <div class="topbar-logo">📊</div>
+    <div>
+      <div class="topbar-title" id="pageTitle">لوحة القيادة</div>
+      <div class="topbar-sub">قسم الإعلاميات</div>
+    </div>
   </div>
-  <div class="topbar-icon">📊</div>
+  <div class="topbar-actions">
+    <button class="btn-icon" onclick="showExportMenu()" title="تصدير">📤</button>
+    <button class="btn-icon" onclick="printPage()" title="طباعة">🖨️</button>
+  </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
+<!-- ══════════════════════════════════
      PAGE 1: DASHBOARD
-═══════════════════════════════════════════ -->
+══════════════════════════════════ -->
 <div class="page active" id="page-dashboard">
+  <div id="print-header">إدارة الحجم الساعي — قسم الإعلاميات</div>
 
-  <!-- Hero Stats -->
+  <!-- Hero -->
+  <div class="hero-banner">
+    <div class="hero-title">مرحباً 👋</div>
+    <div class="hero-sub">لوحة متابعة الحجم الساعي للقسم</div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val" id="h-enseignants">0</div>
+        <div class="hero-stat-label">أستاذ</div>
+      </div>
+      <div style="width:1px; background:rgba(255,255,255,0.15);"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-val" id="h-filieres">0</div>
+        <div class="hero-stat-label">شعبة</div>
+      </div>
+      <div style="width:1px; background:rgba(255,255,255,0.15);"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-val" id="h-modules">0</div>
+        <div class="hero-stat-label">مادة</div>
+      </div>
+      <div style="width:1px; background:rgba(255,255,255,0.15);"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-val" id="h-avg">0</div>
+        <div class="hero-stat-label">متوسط/أستاذ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats grid -->
   <div class="stat-grid">
-    <div class="stat-card purple">
-      <div class="stat-icon">👨‍🏫</div>
-      <div class="stat-value" id="s-enseignants">0</div>
-      <div class="stat-label">أستاذ</div>
-    </div>
-    <div class="stat-card green">
-      <div class="stat-icon">📚</div>
-      <div class="stat-value" id="s-modules">0</div>
-      <div class="stat-label">مادة</div>
-    </div>
-    <div class="stat-card amber">
-      <div class="stat-icon">🎓</div>
-      <div class="stat-value" id="s-filieres">0</div>
-      <div class="stat-label">شعبة</div>
-    </div>
-    <div class="stat-card blue">
+    <div class="stat-card indigo">
       <div class="stat-icon">⏱️</div>
       <div class="stat-value" id="s-total-h">0</div>
       <div class="stat-label">ساعة إجمالية</div>
     </div>
-  </div>
-
-  <!-- Repartition par type -->
-  <div class="card">
-    <div class="card-title">التوزيع حسب نوع الحصة</div>
-    <div class="stat-grid">
-      <div class="stat-card blue" style="grid-column: 1">
-        <div class="stat-icon">🎙️</div>
-        <div class="stat-value" id="s-cm">0</div>
-        <div class="stat-label">محاضرات CM</div>
-      </div>
-      <div class="stat-card green" style="grid-column: 2">
-        <div class="stat-icon">📝</div>
-        <div class="stat-value" id="s-td">0</div>
-        <div class="stat-label">أعمال موجهة TD</div>
-      </div>
+    <div class="stat-card violet">
+      <div class="stat-icon">🎙️</div>
+      <div class="stat-value" id="s-cm">0</div>
+      <div class="stat-label">محاضرات CM</div>
     </div>
-    <div class="stat-card teal" style="grid-column: span 2">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div class="stat-icon">🔬</div>
-          <div class="stat-value" id="s-tp">0</div>
-          <div class="stat-label">أعمال تطبيقية TP</div>
-        </div>
-        <div style="text-align:left">
-          <div class="stat-value" id="s-avg">0</div>
-          <div class="stat-label">متوسط الحجم/أستاذ</div>
-        </div>
-      </div>
+    <div class="stat-card emerald">
+      <div class="stat-icon">📝</div>
+      <div class="stat-value" id="s-td">0</div>
+      <div class="stat-label">أعمال موجهة TD</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-icon">🔬</div>
+      <div class="stat-value" id="s-tp">0</div>
+      <div class="stat-label">أعمال تطبيقية TP</div>
     </div>
   </div>
 
   <!-- Chart -->
   <div class="card">
-    <div class="card-title">الحجم الساعي لكل أستاذ</div>
-    <div class="chart-wrap">
-      <canvas id="chartEnseignants"></canvas>
+    <div class="card-title">📈 الحجم الساعي لكل أستاذ</div>
+    <div class="chart-wrap" id="chart-dashboard-wrap">
+      <canvas id="chartDashboard"></canvas>
     </div>
     <div id="chart-empty" class="empty" style="display:none;">
       <div class="empty-icon">📉</div>
@@ -318,67 +565,126 @@
     </div>
   </div>
 
+  <!-- Overload Alert -->
+  <div id="overload-alerts"></div>
+
   <!-- Quick actions -->
   <div class="card">
-    <div class="card-title">إجراءات سريعة</div>
+    <div class="card-title">⚡ إجراءات سريعة</div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-      <button class="btn btn-primary" onclick="goTo('filieres')">➕ شعبة جديدة</button>
-      <button class="btn btn-success" onclick="goTo('enseignants')">➕ أستاذ جديد</button>
-      <button class="btn btn-outline" onclick="goTo('modules')">📚 إضافة مادة</button>
-      <button class="btn btn-outline" onclick="goTo('stats')">📊 الإحصائيات</button>
+      <button class="btn btn-primary" onclick="navigate('filieres')">🎓 شعبة جديدة</button>
+      <button class="btn btn-success" onclick="navigate('enseignants')">👨‍🏫 أستاذ جديد</button>
+      <button class="btn btn-ghost" onclick="navigate('modules')">📚 إضافة مادة</button>
+      <button class="btn btn-ghost" onclick="navigate('repartition')">⚖️ التوزيع التلقائي</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
+<!-- ══════════════════════════════════
      PAGE 2: FILIÈRES
-═══════════════════════════════════════════ -->
+══════════════════════════════════ -->
 <div class="page" id="page-filieres">
   <div class="section-header">
-    <div class="section-title">الشعب والتخصصات</div>
+    <div>
+      <div class="section-title">🎓 الشعب والتخصصات</div>
+    </div>
     <button class="btn btn-primary btn-sm" onclick="showModal('modal-filiere')">➕ إضافة</button>
   </div>
   <div id="list-filieres"></div>
 </div>
 
-<!-- ═══════════════════════════════════════════
+<!-- ══════════════════════════════════
      PAGE 3: ENSEIGNANTS
-═══════════════════════════════════════════ -->
+══════════════════════════════════ -->
 <div class="page" id="page-enseignants">
   <div class="section-header">
-    <div class="section-title">الأساتذة</div>
+    <div>
+      <div class="section-title">👨‍🏫 الأساتذة</div>
+    </div>
     <button class="btn btn-primary btn-sm" onclick="showModal('modal-enseignant')">➕ إضافة</button>
   </div>
   <div class="search-box">
-    <span>🔍</span>
+    <span style="color:var(--text3)">🔍</span>
     <input type="text" placeholder="ابحث عن أستاذ..." id="search-enseignant" oninput="renderEnseignants()">
   </div>
   <div id="list-enseignants"></div>
 </div>
 
-<!-- ═══════════════════════════════════════════
+<!-- ══════════════════════════════════
      PAGE 4: MODULES
-═══════════════════════════════════════════ -->
+══════════════════════════════════ -->
 <div class="page" id="page-modules">
   <div class="section-header">
-    <div class="section-title">المواد والحجم الساعي</div>
+    <div>
+      <div class="section-title">📚 المواد والمقررات</div>
+    </div>
     <button class="btn btn-primary btn-sm" onclick="showModal('modal-module')">➕ إضافة</button>
   </div>
   <div class="tabs" id="filiere-tabs"></div>
   <div id="list-modules"></div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     PAGE 5: STATISTIQUES
-═══════════════════════════════════════════ -->
-<div class="page" id="page-stats">
-  <div class="section-title" style="margin-bottom:14px">الإحصائيات والتقارير</div>
+<!-- ══════════════════════════════════
+     PAGE 5: RÉPARTITION
+══════════════════════════════════ -->
+<div class="page" id="page-repartition">
+  <div class="section-title" style="margin-bottom:6px">⚖️ التوزيع التلقائي للحجم الساعي</div>
+  <div class="section-sub" style="color:var(--text3); font-size:12px; margin-bottom:16px;">توزيع المواد تلقائياً على الأساتذة بشكل متوازن</div>
 
-  <!-- Table enseignants -->
   <div class="card">
-    <div class="card-title">تفصيل الحجم الساعي لكل أستاذ</div>
+    <div class="card-title">⚙️ إعدادات التوزيع</div>
+    <div class="form-group">
+      <label class="form-label">طريقة التوزيع</label>
+      <select class="form-select" id="dist-method">
+        <option value="balanced">متوازن — توزيع متساوٍ قدر الإمكان</option>
+        <option value="grade">حسب الرتبة — أساتذة أعلى رتبة يحصلون على أكثر</option>
+        <option value="speciality">حسب التخصص — مطابقة التخصص مع المادة</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">الشعبة المستهدفة</label>
+      <select class="form-select" id="dist-filiere">
+        <option value="all">كل الشعب</option>
+      </select>
+    </div>
+    <div class="info-box">
+      💡 سيتم توزيع المواد غير المسندة (التي ليس لها أستاذ) على الأساتذة المتاحين مع مراعاة عدم تجاوز الحد الأقصى.
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="runAutoDistribution()">
+      ⚡ تشغيل التوزيع التلقائي
+    </button>
+  </div>
+
+  <!-- Current state -->
+  <div class="card">
+    <div class="card-title">📋 الوضع الحالي للتوزيع</div>
+    <div id="dist-current"></div>
+  </div>
+
+  <!-- Result -->
+  <div id="dist-result-container" style="display:none">
+    <div class="card">
+      <div class="card-title">✅ نتائج التوزيع</div>
+      <div id="dist-result"></div>
+      <div style="display:flex; gap:10px; margin-top:14px">
+        <button class="btn btn-success" style="flex:1" onclick="applyDistribution()">💾 تطبيق التوزيع</button>
+        <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('dist-result-container').style.display='none'">❌ إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     PAGE 6: STATISTIQUES
+══════════════════════════════════ -->
+<div class="page" id="page-stats">
+  <div class="section-title" style="margin-bottom:14px">📊 الإحصائيات والتقارير</div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-title">📋 تفصيل الحجم الساعي لكل أستاذ</div>
     <div class="table-wrap">
-      <table id="table-stats">
+      <table>
         <thead>
           <tr>
             <th>الأستاذ</th>
@@ -386,6 +692,7 @@
             <th>TD</th>
             <th>TP</th>
             <th>المجموع</th>
+            <th>التحميل</th>
           </tr>
         </thead>
         <tbody id="tbody-stats"></tbody>
@@ -393,37 +700,31 @@
     </div>
   </div>
 
-  <!-- Chart pie -->
+  <!-- Charts -->
   <div class="card">
-    <div class="card-title">التوزيع النسبي لأنواع الحصص</div>
-    <div class="chart-wrap">
-      <canvas id="chartPie"></canvas>
-    </div>
+    <div class="card-title">🥧 التوزيع النسبي لأنواع الحصص</div>
+    <div class="chart-wrap"><canvas id="chartPie"></canvas></div>
   </div>
 
-  <!-- Chart bar par filiere -->
   <div class="card">
-    <div class="card-title">الحجم الساعي حسب الشعبة</div>
-    <div class="chart-wrap">
-      <canvas id="chartFilieres"></canvas>
-    </div>
+    <div class="card-title">📊 الحجم الساعي حسب الشعبة</div>
+    <div class="chart-wrap-lg"><canvas id="chartFilieres"></canvas></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     PAGE 6: PREVISIONS
-═══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════
+     PAGE 7: PREVISIONS
+══════════════════════════════════ -->
 <div class="page" id="page-previsions">
   <div class="section-title" style="margin-bottom:14px">🔮 التوقعات للسنة القادمة</div>
 
   <div class="card">
-    <div class="card-title">معاملات التوقع</div>
+    <div class="card-title">⚙️ معاملات التوقع</div>
     <div class="form-group">
-      <label class="form-label">نسبة الزيادة المتوقعة (%)</label>
+      <label class="form-label">نسبة الزيادة المتوقعة</label>
       <input type="range" min="0" max="50" value="10" id="growth-rate"
-        oninput="document.getElementById('growth-val').textContent=this.value+'%'; calcForecast();"
-        style="width:100%; accent-color: var(--primary);">
-      <div style="text-align:center; font-size:22px; font-weight:900; color:var(--primary-light); margin:6px 0;" id="growth-val">10%</div>
+        oninput="document.getElementById('growth-val').textContent=this.value+'%'; calcForecast();">
+      <div style="text-align:center; font-size:28px; font-weight:900; color:var(--indigo-light); margin:8px 0;" id="growth-val">10%</div>
     </div>
     <div class="form-row-2">
       <div class="form-group">
@@ -437,18 +738,18 @@
     </div>
   </div>
 
-  <div class="card" id="forecast-result">
-    <div class="card-title">نتائج التوقع</div>
+  <div class="card">
+    <div class="card-title">📈 نتائج التوقع</div>
     <div id="forecast-content"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">توقع الحجم لكل أستاذ</div>
+    <div class="card-title">👤 توقع الحجم لكل أستاذ</div>
     <div id="forecast-teachers"></div>
   </div>
 </div>
 
-<!-- ─── BOTTOM NAV ─── -->
+<!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <button class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
     <span class="nav-icon">🏠</span>الرئيسية
@@ -462,6 +763,9 @@
   <button class="nav-item" onclick="navigate('modules')" id="nav-modules">
     <span class="nav-icon">📚</span>المواد
   </button>
+  <button class="nav-item" onclick="navigate('repartition')" id="nav-repartition">
+    <span class="nav-icon">⚖️</span>توزيع
+  </button>
   <button class="nav-item" onclick="navigate('stats')" id="nav-stats">
     <span class="nav-icon">📊</span>إحصاء
   </button>
@@ -470,32 +774,40 @@
   </button>
 </nav>
 
-<!-- ═══════════════════════════════════════════
+<!-- ══════════════════════════════════
      MODALS
-═══════════════════════════════════════════ -->
+══════════════════════════════════ -->
 
 <!-- Modal Filière -->
 <div class="modal-overlay" id="modal-filiere" style="display:none;" onclick="closeModalOutside(event,'modal-filiere')">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">➕ إضافة شعبة</div>
+    <div class="modal-title" id="filiere-modal-title">🎓 إضافة شعبة</div>
     <div class="form-group">
-      <label class="form-label">اسم الشعبة</label>
-      <input type="text" class="form-input" id="f-nom" placeholder="مثال: الإعلاميات - السنة الثالثة">
+      <label class="form-label">اسم الشعبة *</label>
+      <input type="text" class="form-input" id="f-nom" placeholder="مثال: الإعلاميات — السنة الثالثة">
     </div>
     <div class="form-row-2">
       <div class="form-group">
         <label class="form-label">الرمز</label>
-        <input type="text" class="form-input" id="f-code" placeholder="مثال: INFO3">
+        <input type="text" class="form-input" id="f-code" placeholder="INFO3">
       </div>
       <div class="form-group">
         <label class="form-label">عدد الطلاب</label>
-        <input type="number" class="form-input" id="f-etudiants" placeholder="30">
+        <input type="number" class="form-input" id="f-etudiants" placeholder="30" min="0">
       </div>
     </div>
     <div class="form-group">
       <label class="form-label">القاعة / المحل</label>
-      <input type="text" class="form-input" id="f-local" placeholder="مثال: قاعة A - 101">
+      <input type="text" class="form-input" id="f-local" placeholder="قاعة A101">
+    </div>
+    <div class="form-group">
+      <label class="form-label">الفصل الدراسي</label>
+      <select class="form-select" id="f-semestre">
+        <option value="S1">الفصل الأول S1</option>
+        <option value="S2">الفصل الثاني S2</option>
+        <option value="سنوي">سنوي</option>
+      </select>
     </div>
     <input type="hidden" id="f-edit-id">
     <div style="display:flex; gap:10px; margin-top:16px;">
@@ -509,10 +821,10 @@
 <div class="modal-overlay" id="modal-enseignant" style="display:none;" onclick="closeModalOutside(event,'modal-enseignant')">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">👨‍🏫 إضافة أستاذ</div>
+    <div class="modal-title" id="ens-modal-title">👨‍🏫 إضافة أستاذ</div>
     <div class="form-row-2">
       <div class="form-group">
-        <label class="form-label">الاسم</label>
+        <label class="form-label">الاسم *</label>
         <input type="text" class="form-input" id="e-nom" placeholder="الاسم الأخير">
       </div>
       <div class="form-group">
@@ -522,20 +834,20 @@
     </div>
     <div class="form-group">
       <label class="form-label">البريد الإلكتروني</label>
-      <input type="email" class="form-input" id="e-email" placeholder="example@univ.ma">
+      <input type="email" class="form-input" id="e-email" placeholder="prof@univ.ma">
     </div>
     <div class="form-row-2">
       <div class="form-group">
-        <label class="form-label">الرتبة</label>
+        <label class="form-label">الرتبة العلمية</label>
         <select class="form-select" id="e-grade">
-          <option value="أستاذ محاضر">أستاذ محاضر</option>
-          <option value="أستاذ التعليم العالي">أستاذ التعليم العالي</option>
-          <option value="أستاذ مساعد">أستاذ مساعد</option>
+          <option value="PES">أستاذ التعليم العالي</option>
+          <option value="PH">أستاذ محاضر</option>
+          <option value="PA">أستاذ مساعد</option>
           <option value="مؤطر">مؤطر</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">الحجم الساعي الأقصى</label>
+        <label class="form-label">الحجم الأقصى (ساعة)</label>
         <input type="number" class="form-input" id="e-max-h" value="192" min="0">
       </div>
     </div>
@@ -555,51 +867,49 @@
 <div class="modal-overlay" id="modal-module" style="display:none;" onclick="closeModalOutside(event,'modal-module')">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">📚 إضافة مادة</div>
+    <div class="modal-title" id="mod-modal-title">📚 إضافة مادة</div>
     <div class="form-group">
-      <label class="form-label">اسم المادة</label>
+      <label class="form-label">اسم المادة *</label>
       <input type="text" class="form-input" id="m-nom" placeholder="مثال: قواعد البيانات">
     </div>
     <div class="form-row-2">
       <div class="form-group">
-        <label class="form-label">الشعبة</label>
+        <label class="form-label">الشعبة *</label>
         <select class="form-select" id="m-filiere"></select>
       </div>
       <div class="form-group">
-        <label class="form-label">الأستاذ المسؤول</label>
-        <select class="form-select" id="m-enseignant">
-          <option value="">— اختر أستاذاً —</option>
-        </select>
-      </div>
-    </div>
-    <div class="card-title" style="margin-top:6px;">ساعات الحصص الأسبوعية</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">CM (محاضرات)</label>
-        <input type="number" class="form-input" id="m-cm" value="0" min="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">TD (موجهة)</label>
-        <input type="number" class="form-input" id="m-td" value="0" min="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">TP (تطبيقية)</label>
-        <input type="number" class="form-input" id="m-tp" value="0" min="0">
-      </div>
-    </div>
-    <div class="form-row-2">
-      <div class="form-group">
-        <label class="form-label">عدد الأسابيع</label>
-        <input type="number" class="form-input" id="m-semaines" value="16" min="1">
-      </div>
-      <div class="form-group">
-        <label class="form-label">الفصل الدراسي</label>
+        <label class="form-label">الفصل</label>
         <select class="form-select" id="m-semestre">
-          <option value="S1">الفصل 1</option>
-          <option value="S2">الفصل 2</option>
+          <option value="S1">S1</option>
+          <option value="S2">S2</option>
           <option value="سنوي">سنوي</option>
         </select>
       </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">الأستاذ المسؤول</label>
+      <select class="form-select" id="m-enseignant">
+        <option value="">— سيُحدَّد تلقائياً —</option>
+      </select>
+    </div>
+    <div class="form-divider">⏰ ساعات الحصص الأسبوعية</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">🎙️ CM</label>
+        <input type="number" class="form-input" id="m-cm" value="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">📝 TD</label>
+        <input type="number" class="form-input" id="m-td" value="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">🔬 TP</label>
+        <input type="number" class="form-input" id="m-tp" value="0" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">عدد الأسابيع</label>
+      <input type="number" class="form-input" id="m-semaines" value="16" min="1">
     </div>
     <input type="hidden" id="m-edit-id">
     <div style="display:flex; gap:10px; margin-top:16px;">
@@ -609,127 +919,225 @@
   </div>
 </div>
 
-<!-- Detail Enseignant Modal -->
+<!-- Modal Detail Enseignant -->
 <div class="modal-overlay" id="modal-detail-ens" style="display:none;" onclick="closeModalOutside(event,'modal-detail-ens')">
   <div class="modal">
     <div class="modal-handle"></div>
     <div id="detail-ens-content"></div>
-    <button class="btn btn-outline" style="width:100%; margin-top:14px;" onclick="hideModal('modal-detail-ens')">إغلاق</button>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn btn-outline" style="flex:1" onclick="hideModal('modal-detail-ens')">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Export -->
+<div class="modal-overlay" id="modal-export" style="display:none;" onclick="closeModalOutside(event,'modal-export')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📤 تصدير البيانات</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="btn btn-primary" onclick="exportPDF('full')">
+        📄 تقرير PDF كامل
+      </button>
+      <button class="btn btn-ghost" onclick="exportPDF('enseignants')">
+        👨‍🏫 PDF — قائمة الأساتذة
+      </button>
+      <button class="btn btn-ghost" onclick="exportPDF('modules')">
+        📚 PDF — قائمة المواد
+      </button>
+      <button class="btn btn-ghost" onclick="exportPDF('stats')">
+        📊 PDF — الإحصائيات
+      </button>
+      <div class="divider"></div>
+      <button class="btn btn-success" onclick="exportCSV()">
+        📊 تصدير CSV (Excel)
+      </button>
+      <button class="btn btn-amber" onclick="exportJSON()">
+        💾 نسخ احتياطي JSON
+      </button>
+      <button class="btn btn-ghost" onclick="importJSON()">
+        📥 استيراد من ملف JSON
+      </button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+    </div>
+    <button class="btn btn-outline" style="width:100%;margin-top:14px" onclick="hideModal('modal-export')">إغلاق</button>
+  </div>
+</div>
+
+<!-- Alert Confirm -->
+<div class="modal-overlay" id="modal-confirm" style="display:none;">
+  <div class="alert-modal">
+    <div class="alert-icon" id="confirm-icon">⚠️</div>
+    <div class="alert-title" id="confirm-title">تأكيد الحذف</div>
+    <div class="alert-msg" id="confirm-msg">هل أنت متأكد من هذا الإجراء؟</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-danger" style="flex:1" id="confirm-ok">تأكيد</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="hideModal('modal-confirm')">إلغاء</button>
+    </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════
-// DATA
-// ═══════════════════════════════
-let data = {
-  filieres: [],
-  enseignants: [],
-  modules: []
-};
-let chartEns, chartPie, chartFil;
+// ══════════════════════════════════
+// STATE
+// ══════════════════════════════════
+let data = { filieres: [], enseignants: [], modules: [] };
+let charts = {};
 let currentFiliereTab = 'all';
+let pendingDistribution = null;
 
+// ══════════════════════════════════
+// PERSISTENCE
+// ══════════════════════════════════
 function loadData() {
   try {
-    const saved = localStorage.getItem('vol_horaire_data');
-    if (saved) data = JSON.parse(saved);
+    const s = localStorage.getItem('adii_vol_horaire_v2');
+    if (s) data = JSON.parse(s);
   } catch(e) {}
 }
 function saveData() {
-  localStorage.setItem('vol_horaire_data', JSON.stringify(data));
+  localStorage.setItem('adii_vol_horaire_v2', JSON.stringify(data));
 }
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
-// ═══════════════════════════════
+// ══════════════════════════════════
 // NAVIGATION
-// ═══════════════════════════════
+// ══════════════════════════════════
 const pageTitles = {
   dashboard: 'لوحة القيادة',
   filieres: 'الشعب والتخصصات',
   enseignants: 'الأساتذة',
   modules: 'المواد والمقررات',
+  repartition: 'التوزيع التلقائي',
   stats: 'الإحصائيات',
   previsions: 'التوقعات'
 };
-
 function navigate(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
-  document.getElementById('nav-' + page).classList.add('active');
-  document.getElementById('pageTitle').textContent = pageTitles[page];
-  if (page === 'dashboard') renderDashboard();
-  if (page === 'filieres') renderFilieres();
-  if (page === 'enseignants') renderEnseignants();
-  if (page === 'modules') renderModules();
-  if (page === 'stats') renderStats();
-  if (page === 'previsions') calcForecast();
+  const nav = document.getElementById('nav-' + page);
+  if (nav) nav.classList.add('active');
+  document.getElementById('pageTitle').textContent = pageTitles[page] || '';
+  const renders = {
+    dashboard: renderDashboard,
+    filieres: renderFilieres,
+    enseignants: renderEnseignants,
+    modules: renderModules,
+    repartition: renderRepartition,
+    stats: renderStats,
+    previsions: calcForecast
+  };
+  if (renders[page]) renders[page]();
   window.scrollTo(0, 0);
 }
-function goTo(page) { navigate(page); }
 
-// ═══════════════════════════════
+// ══════════════════════════════════
 // MODALS
-// ═══════════════════════════════
+// ══════════════════════════════════
 function showModal(id) {
   if (id === 'modal-module') fillModuleSelects();
-  if (id === 'modal-filiere') { clearFiliere(); }
-  if (id === 'modal-enseignant') { clearEnseignant(); }
+  if (id === 'modal-filiere') clearFiliere();
+  if (id === 'modal-enseignant') clearEnseignant();
   document.getElementById(id).style.display = 'flex';
 }
-function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+function hideModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
 function closeModalOutside(e, id) {
   if (e.target.classList.contains('modal-overlay')) hideModal(id);
 }
-function toast(msg, color='var(--accent)') {
-  const t = document.createElement('div');
-  t.className = 'toast'; t.textContent = msg;
-  t.style.background = color;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2200);
+function confirm2(opts) {
+  return new Promise(resolve => {
+    document.getElementById('confirm-icon').textContent = opts.icon || '⚠️';
+    document.getElementById('confirm-title').textContent = opts.title || 'تأكيد';
+    document.getElementById('confirm-msg').textContent = opts.msg || '';
+    document.getElementById('confirm-ok').textContent = opts.ok || 'تأكيد';
+    document.getElementById('confirm-ok').className = 'btn ' + (opts.btnClass || 'btn-danger');
+    document.getElementById('modal-confirm').style.display = 'flex';
+    const btn = document.getElementById('confirm-ok');
+    const clone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone, btn);
+    clone.onclick = () => { hideModal('modal-confirm'); resolve(true); };
+  });
 }
 
-// ═══════════════════════════════
+// ══════════════════════════════════
+// TOAST
+// ══════════════════════════════════
+function toast(msg, color = 'var(--emerald)', duration = 2200) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  t.style.background = color;
+  t.style.color = '#fff';
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, duration);
+}
+
+// ══════════════════════════════════
+// HELPERS
+// ══════════════════════════════════
+function getTotalH(m) {
+  return ((parseInt(m.cm)||0) + (parseInt(m.td)||0) + (parseInt(m.tp)||0)) * (parseInt(m.semaines)||16);
+}
+function getEnseignantH(eid) {
+  return data.modules.filter(m => m.enseignantId === eid)
+    .reduce((s, m) => s + getTotalH(m), 0);
+}
+function getTotalDept() {
+  return data.modules.reduce((s, m) => s + getTotalH(m), 0);
+}
+function pctColor(pct) {
+  if (pct > 100) return '#ef4444';
+  if (pct > 85) return '#f59e0b';
+  return '#10b981';
+}
+
+// ══════════════════════════════════
 // FILIÈRES
-// ═══════════════════════════════
+// ══════════════════════════════════
 function clearFiliere() {
-  ['f-nom','f-code','f-local','f-etudiants','f-edit-id'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
+  ['f-nom','f-code','f-local','f-etudiants','f-edit-id'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('filiere-modal-title').textContent = '🎓 إضافة شعبة';
 }
 function saveFiliere() {
   const nom = document.getElementById('f-nom').value.trim();
-  if (!nom) { toast('أدخل اسم الشعبة', '#ef4444'); return; }
+  if (!nom) { toast('⚠️ أدخل اسم الشعبة', '#ef4444'); return; }
   const editId = document.getElementById('f-edit-id').value;
   const obj = {
-    id: editId || uid(),
-    nom,
+    id: editId || uid(), nom,
     code: document.getElementById('f-code').value.trim(),
     local: document.getElementById('f-local').value.trim(),
+    semestre: document.getElementById('f-semestre').value,
     etudiants: parseInt(document.getElementById('f-etudiants').value) || 0
   };
   if (editId) {
-    const idx = data.filieres.findIndex(f => f.id === editId);
-    if (idx !== -1) data.filieres[idx] = obj;
-  } else {
-    data.filieres.push(obj);
-  }
-  saveData(); hideModal('modal-filiere'); renderFilieres(); toast('✅ تم حفظ الشعبة');
+    const i = data.filieres.findIndex(f => f.id === editId);
+    if (i !== -1) data.filieres[i] = obj;
+  } else { data.filieres.push(obj); }
+  saveData(); hideModal('modal-filiere'); renderFilieres();
+  toast('✅ تم حفظ الشعبة');
 }
 function editFiliere(id) {
-  const f = data.filieres.find(x => x.id === id);
-  if (!f) return;
+  const f = data.filieres.find(x => x.id === id); if (!f) return;
   document.getElementById('f-nom').value = f.nom;
   document.getElementById('f-code').value = f.code || '';
   document.getElementById('f-local').value = f.local || '';
   document.getElementById('f-etudiants').value = f.etudiants || '';
+  document.getElementById('f-semestre').value = f.semestre || 'S1';
   document.getElementById('f-edit-id').value = f.id;
-  document.getElementById('modal-filiere').querySelector('.modal-title').textContent = '✏️ تعديل الشعبة';
+  document.getElementById('filiere-modal-title').textContent = '✏️ تعديل الشعبة';
   showModal('modal-filiere');
 }
-function deleteFiliere(id) {
-  if (!confirm('هل تريد حذف هذه الشعبة؟')) return;
+async function deleteFiliere(id) {
+  const nb = data.modules.filter(m => m.filiereId === id).length;
+  const ok = await confirm2({
+    icon: '🗑️', title: 'حذف الشعبة',
+    msg: `سيتم حذف الشعبة و${nb} مادة مرتبطة بها. هل أنت متأكد؟`,
+    ok: 'حذف'
+  });
+  if (!ok) return;
   data.filieres = data.filieres.filter(f => f.id !== id);
   data.modules = data.modules.filter(m => m.filiereId !== id);
   saveData(); renderFilieres(); renderDashboard();
@@ -741,184 +1149,191 @@ function renderFilieres() {
     list.innerHTML = `<div class="empty"><div class="empty-icon">🎓</div><div class="empty-text">لا توجد شعب بعد، أضف شعبة جديدة!</div></div>`;
     return;
   }
-  const colors = ['purple','green','amber','blue','teal','red'];
-  list.innerHTML = data.filieres.map((f, i) => {
-    const nbModules = data.modules.filter(m => m.filiereId === f.id).length;
-    const totalH = data.modules.filter(m => m.filiereId === f.id)
-      .reduce((s, m) => s + getTotalH(m), 0);
+  list.innerHTML = data.filieres.map(f => {
+    const nbM = data.modules.filter(m => m.filiereId === f.id).length;
+    const totalH = data.modules.filter(m => m.filiereId === f.id).reduce((s,m) => s+getTotalH(m), 0);
     return `
     <div class="list-item">
-      <div class="list-item-icon" style="background:var(--surface)">🎓</div>
+      <div class="list-item-icon" style="background:rgba(99,102,241,0.15)">🎓</div>
       <div class="list-item-body">
         <div class="list-item-title">${f.nom}</div>
-        <div class="list-item-sub">
-          ${f.code ? `<span class="badge badge-purple">${f.code}</span> ` : ''}
-          ${nbModules} مادة · ${totalH}h
-          ${f.local ? ` · ${f.local}` : ''}
-          ${f.etudiants ? ` · ${f.etudiants} طالب` : ''}
+        <div class="list-item-sub" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;">
+          ${f.code ? `<span class="badge badge-indigo">${f.code}</span>` : ''}
+          ${f.semestre ? `<span class="badge badge-sky">${f.semestre}</span>` : ''}
+          <span class="badge badge-emerald">${nbM} مادة</span>
+          <span class="badge badge-violet">${totalH}h</span>
+          ${f.etudiants ? `<span class="badge badge-amber">👥 ${f.etudiants}</span>` : ''}
         </div>
+        ${f.local ? `<div style="font-size:11px;color:var(--text3);margin-top:4px;">📍 ${f.local}</div>` : ''}
       </div>
       <div class="list-item-actions">
         <button class="btn-icon" onclick="editFiliere('${f.id}')">✏️</button>
-        <button class="btn-icon" style="color:#ef4444" onclick="deleteFiliere('${f.id}')">🗑️</button>
+        <button class="btn-icon" style="color:#f43f5e" onclick="deleteFiliere('${f.id}')">🗑️</button>
       </div>
     </div>`;
   }).join('');
 }
 
-// ═══════════════════════════════
+// ══════════════════════════════════
 // ENSEIGNANTS
-// ═══════════════════════════════
+// ══════════════════════════════════
+const gradeLabels = { 'PES': 'أستاذ التعليم العالي', 'PH': 'أستاذ محاضر', 'PA': 'أستاذ مساعد', 'مؤطر': 'مؤطر' };
 function clearEnseignant() {
   ['e-nom','e-prenom','e-email','e-specialite','e-edit-id'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('e-max-h').value = 192;
+  document.getElementById('e-grade').value = 'PES';
+  document.getElementById('ens-modal-title').textContent = '👨‍🏫 إضافة أستاذ';
 }
 function saveEnseignant() {
   const nom = document.getElementById('e-nom').value.trim();
-  if (!nom) { toast('أدخل اسم الأستاذ', '#ef4444'); return; }
+  if (!nom) { toast('⚠️ أدخل اسم الأستاذ', '#ef4444'); return; }
   const editId = document.getElementById('e-edit-id').value;
   const obj = {
-    id: editId || uid(),
-    nom, prenom: document.getElementById('e-prenom').value.trim(),
+    id: editId || uid(), nom,
+    prenom: document.getElementById('e-prenom').value.trim(),
     email: document.getElementById('e-email').value.trim(),
     grade: document.getElementById('e-grade').value,
-    maxH: parseInt(document.getElementById('e-max-h').value) || 192,
-    specialite: document.getElementById('e-specialite').value.trim()
+    specialite: document.getElementById('e-specialite').value.trim(),
+    maxH: parseInt(document.getElementById('e-max-h').value) || 192
   };
   if (editId) {
-    const idx = data.enseignants.findIndex(e => e.id === editId);
-    if (idx !== -1) data.enseignants[idx] = obj;
-  } else {
-    data.enseignants.push(obj);
-  }
-  saveData(); hideModal('modal-enseignant'); renderEnseignants(); toast('✅ تم حفظ الأستاذ');
+    const i = data.enseignants.findIndex(e => e.id === editId);
+    if (i !== -1) data.enseignants[i] = obj;
+  } else { data.enseignants.push(obj); }
+  saveData(); hideModal('modal-enseignant'); renderEnseignants();
+  toast('✅ تم حفظ الأستاذ');
 }
 function editEnseignant(id) {
-  const e = data.enseignants.find(x => x.id === id);
-  if (!e) return;
+  const e = data.enseignants.find(x => x.id === id); if (!e) return;
   document.getElementById('e-nom').value = e.nom;
   document.getElementById('e-prenom').value = e.prenom || '';
   document.getElementById('e-email').value = e.email || '';
-  document.getElementById('e-grade').value = e.grade;
-  document.getElementById('e-max-h').value = e.maxH;
+  document.getElementById('e-grade').value = e.grade || 'PES';
   document.getElementById('e-specialite').value = e.specialite || '';
+  document.getElementById('e-max-h').value = e.maxH || 192;
   document.getElementById('e-edit-id').value = e.id;
-  document.getElementById('modal-enseignant').querySelector('.modal-title').textContent = '✏️ تعديل الأستاذ';
+  document.getElementById('ens-modal-title').textContent = '✏️ تعديل الأستاذ';
   showModal('modal-enseignant');
 }
-function deleteEnseignant(id) {
-  if (!confirm('هل تريد حذف هذا الأستاذ؟')) return;
+async function deleteEnseignant(id) {
+  const e = data.enseignants.find(x => x.id === id);
+  const ok = await confirm2({
+    icon: '🗑️', title: 'حذف الأستاذ',
+    msg: `سيتم حذف ${e?.nom || 'الأستاذ'} وإلغاء تعيينه من جميع المواد.`,
+    ok: 'حذف'
+  });
+  if (!ok) return;
   data.enseignants = data.enseignants.filter(e => e.id !== id);
-  data.modules = data.modules.map(m => m.enseignantId === id ? {...m, enseignantId: ''} : m);
-  saveData(); renderEnseignants(); toast('🗑️ تم الحذف', '#ef4444');
-}
-function getEnseignantH(id) {
-  return data.modules.filter(m => m.enseignantId === id).reduce((s, m) => s + getTotalH(m), 0);
+  data.modules.forEach(m => { if (m.enseignantId === id) m.enseignantId = ''; });
+  saveData(); renderEnseignants(); renderDashboard();
+  toast('🗑️ تم الحذف', '#ef4444');
 }
 function showDetailEnseignant(id) {
-  const e = data.enseignants.find(x => x.id === id);
-  if (!e) return;
-  const modules = data.modules.filter(m => m.enseignantId === id);
-  const cm = modules.reduce((s, m) => s + (m.cm * m.semaines), 0);
-  const td = modules.reduce((s, m) => s + (m.td * m.semaines), 0);
-  const tp = modules.reduce((s, m) => s + (m.tp * m.semaines), 0);
-  const total = cm + td + tp;
-  const pct = e.maxH > 0 ? Math.min(100, Math.round(total / e.maxH * 100)) : 0;
-  const pctColor = pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#10b981';
+  const e = data.enseignants.find(x => x.id === id); if (!e) return;
+  const mods = data.modules.filter(m => m.enseignantId === id);
+  const cm = mods.reduce((s,m) => s + m.cm*m.semaines, 0);
+  const td = mods.reduce((s,m) => s + m.td*m.semaines, 0);
+  const tp = mods.reduce((s,m) => s + m.tp*m.semaines, 0);
+  const tot = cm+td+tp;
+  const pct = e.maxH > 0 ? Math.min(100, Math.round(tot/e.maxH*100)) : 0;
+  const pc = pctColor(pct);
   document.getElementById('detail-ens-content').innerHTML = `
-    <div class="modal-title">👨‍🏫 ${e.nom} ${e.prenom || ''}</div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
-      <span class="badge badge-purple">${e.grade}</span>
-      ${e.specialite ? `<span class="badge badge-blue">${e.specialite}</span>` : ''}
-      ${e.email ? `<span class="badge badge-green">${e.email}</span>` : ''}
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+      <div style="width:56px;height:56px;border-radius:16px;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">👤</div>
+      <div>
+        <div style="font-size:19px;font-weight:900;color:var(--text)">${e.nom} ${e.prenom||''}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px;">${gradeLabels[e.grade]||e.grade} ${e.specialite ? '· '+e.specialite : ''}</div>
+        ${e.email ? `<div style="font-size:11px;color:var(--indigo-light);margin-top:2px;">✉️ ${e.email}</div>` : ''}
+      </div>
     </div>
-    <div class="stat-grid" style="margin-bottom:14px;">
-      <div class="stat-card blue"><div class="stat-icon">🎙️</div><div class="stat-value">${cm}</div><div class="stat-label">ساعة CM</div></div>
-      <div class="stat-card green"><div class="stat-icon">📝</div><div class="stat-value">${td}</div><div class="stat-label">ساعة TD</div></div>
-      <div class="stat-card teal"><div class="stat-icon">🔬</div><div class="stat-value">${tp}</div><div class="stat-label">ساعة TP</div></div>
-      <div class="stat-card purple"><div class="stat-icon">⏱️</div><div class="stat-value">${total}</div><div class="stat-label">المجموع</div></div>
+    <div class="stat-grid" style="margin-bottom:12px;">
+      <div class="stat-card violet"><div class="stat-icon">🎙️</div><div class="stat-value">${cm}h</div><div class="stat-label">CM</div></div>
+      <div class="stat-card emerald"><div class="stat-icon">📝</div><div class="stat-value">${td}h</div><div class="stat-label">TD</div></div>
+      <div class="stat-card amber"><div class="stat-icon">🔬</div><div class="stat-value">${tp}h</div><div class="stat-label">TP</div></div>
+      <div class="stat-card sky"><div class="stat-icon">⏱️</div><div class="stat-value">${tot}h</div><div class="stat-label">الإجمالي</div></div>
     </div>
-    <div style="font-size:12px; color:var(--text2); margin-bottom:4px;">نسبة استغلال الحجم (${total}/${e.maxH}h)</div>
-    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background:${pctColor}"></div></div>
-    <div style="font-size:11px; color:${pctColor}; font-weight:700; margin-top:4px; margin-bottom:14px;">${pct}%</div>
-    ${modules.length ? `
-    <div class="card-title">المواد المسندة</div>
-    ${modules.map(m => {
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--text2);font-weight:700;">نسبة التحميل</span>
+        <span style="font-size:13px;font-weight:900;color:${pc}">${pct}% (${tot}/${e.maxH}h)</span>
+      </div>
+      <div class="progress-bar" style="height:10px;border-radius:5px;"><div class="progress-fill" style="width:${pct}%;background:${pc};"></div></div>
+    </div>
+    ${mods.length ? `
+    <div class="card-title">📚 المواد المسندة (${mods.length})</div>
+    ${mods.map(m => {
       const f = data.filieres.find(x => x.id === m.filiereId);
       return `<div class="list-item" style="margin-bottom:8px;">
-        <div class="list-item-icon" style="background:rgba(99,102,241,0.15); color:var(--primary-light);">📚</div>
+        <div class="list-item-icon" style="background:rgba(99,102,241,0.15)">📖</div>
         <div class="list-item-body">
           <div class="list-item-title">${m.nom}</div>
-          <div class="list-item-sub">${f ? f.nom : '—'} · CM:${m.cm*m.semaines}h TD:${m.td*m.semaines}h TP:${m.tp*m.semaines}h</div>
+          <div class="list-item-sub">${f?f.nom:'—'} · 🎙️${m.cm*m.semaines}h 📝${m.td*m.semaines}h 🔬${m.tp*m.semaines}h <strong style="color:var(--indigo-light)">= ${getTotalH(m)}h</strong></div>
         </div>
       </div>`;
-    }).join('')}` : '<div class="empty" style="padding:20px"><div class="empty-text">لا توجد مواد مسندة بعد</div></div>'}
+    }).join('')}` : '<div class="empty" style="padding:20px;"><div class="empty-text">لا توجد مواد مسندة</div></div>'}
   `;
   showModal('modal-detail-ens');
 }
 function renderEnseignants() {
-  const list = document.getElementById('list-enseignants');
-  const q = document.getElementById('search-enseignant').value.toLowerCase();
+  const q = (document.getElementById('search-enseignant')?.value || '').toLowerCase();
   let ens = data.enseignants;
-  if (q) ens = ens.filter(e => (e.nom + ' ' + (e.prenom||'')).toLowerCase().includes(q));
+  if (q) ens = ens.filter(e => (e.nom+' '+(e.prenom||'')+' '+(e.specialite||'')).toLowerCase().includes(q));
+  const list = document.getElementById('list-enseignants');
   if (!ens.length) {
-    list.innerHTML = `<div class="empty"><div class="empty-icon">👨‍🏫</div><div class="empty-text">${q ? 'لا نتائج' : 'لا يوجد أساتذة، أضف أستاذاً جديداً!'}</div></div>`;
+    list.innerHTML = `<div class="empty"><div class="empty-icon">👨‍🏫</div><div class="empty-text">${q ? 'لا نتائج للبحث' : 'لا يوجد أساتذة، أضف أستاذاً!'}</div></div>`;
     return;
   }
   list.innerHTML = ens.map(e => {
-    const total = getEnseignantH(e.id);
-    const pct = e.maxH > 0 ? Math.min(100, Math.round(total / e.maxH * 100)) : 0;
-    const pctColor = pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#10b981';
+    const tot = getEnseignantH(e.id);
+    const pct = e.maxH > 0 ? Math.min(100, Math.round(tot/e.maxH*100)) : 0;
+    const pc = pctColor(pct);
+    const nbM = data.modules.filter(m => m.enseignantId === e.id).length;
     return `
     <div class="list-item" onclick="showDetailEnseignant('${e.id}')" style="cursor:pointer;">
-      <div class="list-item-icon" style="background:rgba(99,102,241,0.15); font-size:22px;">👤</div>
+      <div class="list-item-icon" style="background:rgba(99,102,241,0.15);font-size:22px;">👤</div>
       <div class="list-item-body">
-        <div class="list-item-title">${e.nom} ${e.prenom || ''}</div>
-        <div class="list-item-sub">
-          <span class="badge badge-purple">${e.grade}</span>
-          ${e.specialite ? ` · ${e.specialite}` : ''}
+        <div class="list-item-title">${e.nom} ${e.prenom||''}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0 6px;">
+          <span class="badge badge-indigo">${gradeLabels[e.grade]||e.grade}</span>
+          ${e.specialite ? `<span class="badge badge-sky">${e.specialite}</span>` : ''}
+          <span class="badge badge-emerald">${nbM} مادة</span>
         </div>
-        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-          <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${pct}%; background:${pctColor}"></div></div>
-          <span style="font-size:11px; color:${pctColor}; font-weight:700;">${total}/${e.maxH}h</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${pct}%;background:${pc};"></div></div>
+          <span style="font-size:11px;color:${pc};font-weight:800;white-space:nowrap;">${tot}/${e.maxH}h (${pct}%)</span>
         </div>
       </div>
       <div class="list-item-actions">
-        <button class="btn-icon" onclick="event.stopPropagation(); editEnseignant('${e.id}')">✏️</button>
-        <button class="btn-icon" style="color:#ef4444" onclick="event.stopPropagation(); deleteEnseignant('${e.id}')">🗑️</button>
+        <button class="btn-icon" onclick="event.stopPropagation();editEnseignant('${e.id}')">✏️</button>
+        <button class="btn-icon" style="color:#f43f5e" onclick="event.stopPropagation();deleteEnseignant('${e.id}')">🗑️</button>
       </div>
     </div>`;
   }).join('');
 }
 
-// ═══════════════════════════════
+// ══════════════════════════════════
 // MODULES
-// ═══════════════════════════════
-function getTotalH(m) {
-  return ((parseInt(m.cm)||0) + (parseInt(m.td)||0) + (parseInt(m.tp)||0)) * (parseInt(m.semaines)||16);
-}
+// ══════════════════════════════════
 function fillModuleSelects() {
-  const sel = document.getElementById('m-filiere');
-  sel.innerHTML = data.filieres.map(f => `<option value="${f.id}">${f.nom}</option>`).join('') || '<option>— أضف شعبة أولاً —</option>';
+  const selF = document.getElementById('m-filiere');
+  selF.innerHTML = data.filieres.map(f => `<option value="${f.id}">${f.nom}</option>`).join('') || '<option>— أضف شعبة أولاً —</option>';
   const selE = document.getElementById('m-enseignant');
-  selE.innerHTML = '<option value="">— اختر أستاذاً —</option>' +
+  selE.innerHTML = '<option value="">— سيُحدَّد تلقائياً —</option>' +
     data.enseignants.map(e => `<option value="${e.id}">${e.nom} ${e.prenom||''}</option>`).join('');
-  // clear edit
   document.getElementById('m-edit-id').value = '';
   document.getElementById('m-nom').value = '';
   ['m-cm','m-td','m-tp'].forEach(id => document.getElementById(id).value = 0);
   document.getElementById('m-semaines').value = 16;
-  document.getElementById('modal-module').querySelector('.modal-title').textContent = '📚 إضافة مادة';
+  document.getElementById('mod-modal-title').textContent = '📚 إضافة مادة';
 }
 function saveModule() {
   const nom = document.getElementById('m-nom').value.trim();
   const filiereId = document.getElementById('m-filiere').value;
-  if (!nom) { toast('أدخل اسم المادة', '#ef4444'); return; }
-  if (!filiereId) { toast('اختر شعبة', '#ef4444'); return; }
+  if (!nom) { toast('⚠️ أدخل اسم المادة', '#ef4444'); return; }
+  if (!filiereId) { toast('⚠️ اختر شعبة', '#ef4444'); return; }
   const editId = document.getElementById('m-edit-id').value;
   const obj = {
-    id: editId || uid(),
-    nom, filiereId,
+    id: editId || uid(), nom, filiereId,
     enseignantId: document.getElementById('m-enseignant').value,
     cm: parseInt(document.getElementById('m-cm').value)||0,
     td: parseInt(document.getElementById('m-td').value)||0,
@@ -927,16 +1342,14 @@ function saveModule() {
     semestre: document.getElementById('m-semestre').value
   };
   if (editId) {
-    const idx = data.modules.findIndex(m => m.id === editId);
-    if (idx !== -1) data.modules[idx] = obj;
-  } else {
-    data.modules.push(obj);
-  }
-  saveData(); hideModal('modal-module'); renderModules(); toast('✅ تم حفظ المادة');
+    const i = data.modules.findIndex(m => m.id === editId);
+    if (i !== -1) data.modules[i] = obj;
+  } else { data.modules.push(obj); }
+  saveData(); hideModal('modal-module'); renderModules();
+  toast('✅ تم حفظ المادة');
 }
 function editModule(id) {
-  const m = data.modules.find(x => x.id === id);
-  if (!m) return;
+  const m = data.modules.find(x => x.id === id); if (!m) return;
   fillModuleSelects();
   document.getElementById('m-nom').value = m.nom;
   document.getElementById('m-filiere').value = m.filiereId;
@@ -947,20 +1360,25 @@ function editModule(id) {
   document.getElementById('m-semaines').value = m.semaines;
   document.getElementById('m-semestre').value = m.semestre;
   document.getElementById('m-edit-id').value = m.id;
-  document.getElementById('modal-module').querySelector('.modal-title').textContent = '✏️ تعديل المادة';
+  document.getElementById('mod-modal-title').textContent = '✏️ تعديل المادة';
   document.getElementById('modal-module').style.display = 'flex';
 }
-function deleteModule(id) {
-  if (!confirm('حذف هذه المادة؟')) return;
+async function deleteModule(id) {
+  const ok = await confirm2({ icon:'🗑️', title:'حذف المادة', msg:'سيتم حذف هذه المادة نهائياً.', ok:'حذف' });
+  if (!ok) return;
   data.modules = data.modules.filter(m => m.id !== id);
-  saveData(); renderModules(); toast('🗑️ تم الحذف', '#ef4444');
+  saveData(); renderModules();
+  toast('🗑️ تم الحذف', '#ef4444');
 }
+function setFiliereTab(id) { currentFiliereTab = id; renderModules(); }
 function renderModules() {
-  // Tabs
   const tabsEl = document.getElementById('filiere-tabs');
-  tabsEl.innerHTML = `<button class="tab-btn ${currentFiliereTab==='all'?'active':''}" onclick="setFiliereTab('all')">الكل</button>` +
-    data.filieres.map(f => `<button class="tab-btn ${currentFiliereTab===f.id?'active':''}" onclick="setFiliereTab('${f.id}')">${f.code||f.nom}</button>`).join('');
-
+  tabsEl.innerHTML =
+    `<button class="tab-btn ${currentFiliereTab==='all'?'active':''}" onclick="setFiliereTab('all')">الكل (${data.modules.length})</button>` +
+    data.filieres.map(f => {
+      const nb = data.modules.filter(m => m.filiereId===f.id).length;
+      return `<button class="tab-btn ${currentFiliereTab===f.id?'active':''}" onclick="setFiliereTab('${f.id}')">${f.code||f.nom} (${nb})</button>`;
+    }).join('');
   const list = document.getElementById('list-modules');
   let mods = data.modules;
   if (currentFiliereTab !== 'all') mods = mods.filter(m => m.filiereId === currentFiliereTab);
@@ -971,229 +1389,588 @@ function renderModules() {
   list.innerHTML = mods.map(m => {
     const f = data.filieres.find(x => x.id === m.filiereId);
     const e = data.enseignants.find(x => x.id === m.enseignantId);
-    const total = getTotalH(m);
     return `
     <div class="list-item">
-      <div class="list-item-icon" style="background:rgba(16,185,129,0.15); font-size:20px;">📖</div>
+      <div class="list-item-icon" style="background:rgba(16,185,129,0.15)">📖</div>
       <div class="list-item-body">
         <div class="list-item-title">${m.nom}</div>
-        <div class="list-item-sub" style="margin-bottom:4px;">
-          ${f ? `<span class="badge badge-purple">${f.code||f.nom}</span> ` : ''}
-          ${m.semestre ? `<span class="badge badge-blue">${m.semestre}</span> ` : ''}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0 5px;">
+          ${f ? `<span class="badge badge-indigo">${f.code||f.nom}</span>` : ''}
+          ${m.semestre ? `<span class="badge badge-sky">${m.semestre}</span>` : ''}
         </div>
-        <div style="font-size:11px; color:var(--text2);">
-          🎙️CM: ${m.cm*m.semaines}h &nbsp; 📝TD: ${m.td*m.semaines}h &nbsp; 🔬TP: ${m.tp*m.semaines}h &nbsp;
-          <strong style="color:var(--primary-light)">= ${total}h</strong>
+        <div style="font-size:11px;color:var(--text2);">
+          🎙️ ${m.cm*m.semaines}h &nbsp;📝 ${m.td*m.semaines}h &nbsp;🔬 ${m.tp*m.semaines}h
+          <strong style="color:var(--indigo-light);margin-right:4px;">= ${getTotalH(m)}h</strong>
         </div>
-        ${e ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">👤 ${e.nom} ${e.prenom||''}</div>` : ''}
+        ${e ? `<div style="font-size:11px;color:var(--emerald);margin-top:3px;">👤 ${e.nom} ${e.prenom||''}</div>`
+             : `<div style="font-size:11px;color:var(--text3);margin-top:3px;">⚠️ لا يوجد أستاذ مسند</div>`}
       </div>
       <div class="list-item-actions">
         <button class="btn-icon" onclick="editModule('${m.id}')">✏️</button>
-        <button class="btn-icon" style="color:#ef4444" onclick="deleteModule('${m.id}')">🗑️</button>
+        <button class="btn-icon" style="color:#f43f5e" onclick="deleteModule('${m.id}')">🗑️</button>
       </div>
     </div>`;
   }).join('');
 }
-function setFiliereTab(id) { currentFiliereTab = id; renderModules(); }
 
-// ═══════════════════════════════
+// ══════════════════════════════════
+// AUTO DISTRIBUTION
+// ══════════════════════════════════
+function renderRepartition() {
+  // Populate filiere select
+  const sel = document.getElementById('dist-filiere');
+  sel.innerHTML = '<option value="all">كل الشعب</option>' +
+    data.filieres.map(f => `<option value="${f.id}">${f.nom}</option>`).join('');
+
+  // Current state
+  const cur = document.getElementById('dist-current');
+  if (!data.enseignants.length) {
+    cur.innerHTML = '<div class="empty"><div class="empty-icon">👨‍🏫</div><div class="empty-text">أضف أساتذة أولاً</div></div>';
+    return;
+  }
+  const maxVal = Math.max(...data.enseignants.map(e => e.maxH), 1);
+  cur.innerHTML = data.enseignants.map(e => {
+    const tot = getEnseignantH(e.id);
+    const pct = e.maxH > 0 ? Math.min(100, Math.round(tot/e.maxH*100)) : 0;
+    const pc = pctColor(pct);
+    const unassigned = data.modules.filter(m => !m.enseignantId).length;
+    return `
+    <div class="dist-card">
+      <div class="dist-card-header">
+        <div>
+          <div class="dist-teacher">👤 ${e.nom} ${e.prenom||''}</div>
+          <div style="font-size:11px;color:var(--text3);">${gradeLabels[e.grade]||e.grade} ${e.specialite?'· '+e.specialite:''}</div>
+        </div>
+        <div class="dist-hours" style="color:${pc}">${tot}h <span style="font-size:12px;color:var(--text3)">/ ${e.maxH}h</span></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pc}"></div></div>
+      <div style="font-size:11px;color:${pc};margin-top:5px;font-weight:700;">${pct}% محمّل · ${data.modules.filter(m=>m.enseignantId===e.id).length} مادة</div>
+    </div>`;
+  }).join('') + (data.modules.filter(m => !m.enseignantId).length ?
+    `<div class="info-box">⚠️ يوجد ${data.modules.filter(m=>!m.enseignantId).length} مادة غير مسندة</div>` : '');
+}
+
+function runAutoDistribution() {
+  if (!data.enseignants.length) { toast('⚠️ أضف أساتذة أولاً', '#f59e0b'); return; }
+  const method = document.getElementById('dist-method').value;
+  const filiereFilter = document.getElementById('dist-filiere').value;
+
+  // Get modules to distribute (unassigned or all in selected filiere)
+  let modsToAssign = data.modules.filter(m => !m.enseignantId);
+  if (filiereFilter !== 'all') {
+    modsToAssign = data.modules.filter(m => m.filiereId === filiereFilter);
+  }
+
+  if (!modsToAssign.length) {
+    toast('ℹ️ لا توجد مواد لتوزيعها', '#0ea5e9'); return;
+  }
+
+  // Clone current hours state
+  const hoursMap = {};
+  data.enseignants.forEach(e => { hoursMap[e.id] = getEnseignantH(e.id); });
+
+  // Sort teachers by method
+  let sortedEns = [...data.enseignants];
+  const gradeWeight = { 'PES': 3, 'PH': 2, 'PA': 1, 'مؤطر': 0.5 };
+
+  const assignments = [];
+
+  for (const mod of modsToAssign) {
+    let candidates = sortedEns.filter(e => {
+      const newH = hoursMap[e.id] + getTotalH(mod);
+      return newH <= e.maxH;
+    });
+
+    if (!candidates.length) {
+      candidates = sortedEns; // Assign anyway if no one can fit
+    }
+
+    let chosen = null;
+    if (method === 'balanced') {
+      // Choose the teacher with least % load
+      candidates.sort((a,b) => {
+        const pA = hoursMap[a.id] / a.maxH;
+        const pB = hoursMap[b.id] / b.maxH;
+        return pA - pB;
+      });
+      chosen = candidates[0];
+    } else if (method === 'grade') {
+      candidates.sort((a,b) => {
+        const wA = gradeWeight[a.grade] || 1;
+        const wB = gradeWeight[b.grade] || 1;
+        if (wB !== wA) return wB - wA;
+        return hoursMap[a.id]/a.maxH - hoursMap[b.id]/b.maxH;
+      });
+      chosen = candidates[0];
+    } else if (method === 'speciality') {
+      const modLower = mod.nom.toLowerCase();
+      const matchSpc = candidates.find(e => e.specialite && modLower.includes(e.specialite.toLowerCase().split(',')[0].trim()));
+      if (matchSpc) {
+        chosen = matchSpc;
+      } else {
+        candidates.sort((a,b) => hoursMap[a.id]/a.maxH - hoursMap[b.id]/b.maxH);
+        chosen = candidates[0];
+      }
+    }
+
+    if (chosen) {
+      hoursMap[chosen.id] += getTotalH(mod);
+      assignments.push({ moduleId: mod.id, moduleName: mod.nom, enseignantId: chosen.id, enseignantName: chosen.nom + ' ' + (chosen.prenom||''), hours: getTotalH(mod) });
+    }
+  }
+
+  pendingDistribution = assignments;
+
+  // Show results
+  const container = document.getElementById('dist-result-container');
+  const result = document.getElementById('dist-result');
+  container.style.display = 'block';
+
+  if (!assignments.length) {
+    result.innerHTML = '<div class="empty"><div class="empty-text">لا يمكن توزيع أي مادة</div></div>';
+    return;
+  }
+
+  // Group by teacher
+  const byTeacher = {};
+  assignments.forEach(a => {
+    if (!byTeacher[a.enseignantId]) byTeacher[a.enseignantId] = { name: a.enseignantName, mods: [] };
+    byTeacher[a.enseignantId].mods.push(a);
+  });
+
+  result.innerHTML = `
+    <div class="info-box" style="margin-bottom:12px;">✅ تم توزيع <strong>${assignments.length}</strong> مادة على <strong>${Object.keys(byTeacher).length}</strong> أستاذ</div>
+    ${Object.values(byTeacher).map(t => `
+      <div class="dist-card" style="margin-bottom:10px;">
+        <div style="font-weight:800;color:var(--text);margin-bottom:8px;">👤 ${t.name}</div>
+        ${t.mods.map(m => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:13px;color:var(--text2);">📖 ${m.moduleName}</span>
+            <span class="badge badge-emerald">+${m.hours}h</span>
+          </div>`).join('')}
+        <div style="font-size:12px;color:var(--indigo-light);margin-top:8px;font-weight:700;">
+          إجمالي جديد: ${hoursMap[Object.keys(byTeacher).find(k => byTeacher[k]===t)] || 0}h
+        </div>
+      </div>`).join('')}
+  `;
+  container.scrollIntoView({ behavior: 'smooth' });
+  toast(`✅ تم اقتراح توزيع ${assignments.length} مادة`);
+}
+
+function applyDistribution() {
+  if (!pendingDistribution) return;
+  pendingDistribution.forEach(a => {
+    const mod = data.modules.find(m => m.id === a.moduleId);
+    if (mod) mod.enseignantId = a.enseignantId;
+  });
+  pendingDistribution = null;
+  document.getElementById('dist-result-container').style.display = 'none';
+  saveData();
+  renderRepartition();
+  toast('✅ تم تطبيق التوزيع بنجاح!');
+}
+
+// ══════════════════════════════════
 // DASHBOARD
-// ═══════════════════════════════
+// ══════════════════════════════════
 function renderDashboard() {
-  document.getElementById('s-enseignants').textContent = data.enseignants.length;
-  document.getElementById('s-modules').textContent = data.modules.length;
-  document.getElementById('s-filieres').textContent = data.filieres.length;
-  const totalH = data.modules.reduce((s, m) => s + getTotalH(m), 0);
+  const totalH = getTotalDept();
+  const cm = data.modules.reduce((s,m) => s+m.cm*m.semaines, 0);
+  const td = data.modules.reduce((s,m) => s+m.td*m.semaines, 0);
+  const tp = data.modules.reduce((s,m) => s+m.tp*m.semaines, 0);
+  const avg = data.enseignants.length > 0 ? Math.round(totalH/data.enseignants.length) : 0;
+
+  document.getElementById('h-enseignants').textContent = data.enseignants.length;
+  document.getElementById('h-filieres').textContent = data.filieres.length;
+  document.getElementById('h-modules').textContent = data.modules.length;
+  document.getElementById('h-avg').textContent = avg + 'h';
   document.getElementById('s-total-h').textContent = totalH;
-  const cm = data.modules.reduce((s, m) => s + m.cm * m.semaines, 0);
-  const td = data.modules.reduce((s, m) => s + m.td * m.semaines, 0);
-  const tp = data.modules.reduce((s, m) => s + m.tp * m.semaines, 0);
   document.getElementById('s-cm').textContent = cm;
   document.getElementById('s-td').textContent = td;
   document.getElementById('s-tp').textContent = tp;
-  const avg = data.enseignants.length > 0 ? Math.round(totalH / data.enseignants.length) : 0;
-  document.getElementById('s-avg').textContent = avg;
+
+  // Overload alerts
+  const overloaded = data.enseignants.filter(e => getEnseignantH(e.id) > e.maxH);
+  const alertsEl = document.getElementById('overload-alerts');
+  if (overloaded.length) {
+    alertsEl.innerHTML = `
+      <div style="background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;">
+        <div style="font-weight:800;color:#fb7185;margin-bottom:8px;">⚠️ تحذير: أساتذة تجاوزوا الحد الأقصى</div>
+        ${overloaded.map(e => `<div style="font-size:13px;color:var(--text2);padding:3px 0;">• ${e.nom} ${e.prenom||''}: ${getEnseignantH(e.id)}h / ${e.maxH}h</div>`).join('')}
+      </div>`;
+  } else { alertsEl.innerHTML = ''; }
 
   // Chart
-  const labels = data.enseignants.map(e => e.nom);
+  const labels = data.enseignants.map(e => e.nom + (e.prenom ? ' '+e.prenom[0]+'.' : ''));
   const vals = data.enseignants.map(e => getEnseignantH(e.id));
+  const maxVals = data.enseignants.map(e => e.maxH);
   const empty = document.getElementById('chart-empty');
+  const wrap = document.getElementById('chart-dashboard-wrap');
   if (!labels.length) {
-    empty.style.display = 'block';
-    if (chartEns) { chartEns.destroy(); chartEns = null; }
-    return;
-  }
-  empty.style.display = 'none';
-  const ctx = document.getElementById('chartEnseignants').getContext('2d');
-  if (chartEns) chartEns.destroy();
-  chartEns = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'الحجم الساعي (ساعة)',
-        data: vals,
-        backgroundColor: vals.map((v,i) => `hsl(${230 + i*25},70%,60%)`),
-        borderRadius: 8, borderSkipped: false
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#94a3b8', font: { family: 'Cairo' } }, grid: { color: '#1e293b' } },
-        y: { ticks: { color: '#94a3b8', font: { family: 'Cairo' } }, grid: { color: '#334155' } }
+    wrap.style.display = 'none'; empty.style.display = 'block';
+  } else {
+    wrap.style.display = 'block'; empty.style.display = 'none';
+    const ctx = document.getElementById('chartDashboard').getContext('2d');
+    if (charts.dashboard) charts.dashboard.destroy();
+    charts.dashboard = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'الحجم الحالي',
+            data: vals,
+            backgroundColor: vals.map((v,i) => `hsla(${220+i*30},70%,60%,0.85)`),
+            borderRadius: 8, borderSkipped: false
+          },
+          {
+            label: 'الحد الأقصى',
+            data: maxVals,
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            borderColor: 'rgba(255,255,255,0.15)',
+            borderWidth: 1, borderRadius: 8, borderSkipped: false,
+            type: 'bar'
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color:'#a0a0c8', font:{family:'Tajawal'} } } },
+        scales: {
+          x: { ticks:{color:'#a0a0c8', font:{family:'Tajawal'}}, grid:{color:'rgba(255,255,255,0.04)'} },
+          y: { ticks:{color:'#a0a0c8', font:{family:'Tajawal'}}, grid:{color:'rgba(255,255,255,0.06)'} }
+        }
       }
-    }
-  });
+    });
+  }
 }
 
-// ═══════════════════════════════
+// ══════════════════════════════════
 // STATS
-// ═══════════════════════════════
+// ══════════════════════════════════
 function renderStats() {
-  // Table
   const tbody = document.getElementById('tbody-stats');
+  const totalDept = getTotalDept();
   if (!data.enseignants.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);">لا يوجد أساتذة بعد</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);">لا يوجد أساتذة بعد</td></tr>';
   } else {
-    const totalDept = data.modules.reduce((s, m) => s + getTotalH(m), 0);
     tbody.innerHTML = data.enseignants.map(e => {
       const mods = data.modules.filter(m => m.enseignantId === e.id);
-      const cm = mods.reduce((s, m) => s + m.cm * m.semaines, 0);
-      const td = mods.reduce((s, m) => s + m.td * m.semaines, 0);
-      const tp = mods.reduce((s, m) => s + m.tp * m.semaines, 0);
-      const tot = cm + td + tp;
-      const pct = e.maxH > 0 ? Math.min(100, Math.round(tot / e.maxH * 100)) : 0;
-      const c = pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#10b981';
+      const cm = mods.reduce((s,m) => s+m.cm*m.semaines, 0);
+      const td = mods.reduce((s,m) => s+m.td*m.semaines, 0);
+      const tp = mods.reduce((s,m) => s+m.tp*m.semaines, 0);
+      const tot = cm+td+tp;
+      const pct = e.maxH > 0 ? Math.min(100, Math.round(tot/e.maxH*100)) : 0;
+      const pc = pctColor(pct);
       return `<tr>
-        <td><div style="font-weight:700">${e.nom} ${e.prenom||''}</div><div style="font-size:10px;color:var(--text3)">${e.grade}</div></td>
-        <td><span class="badge badge-blue">${cm}h</span></td>
-        <td><span class="badge badge-green">${td}h</span></td>
+        <td><div style="font-weight:800;">${e.nom} ${e.prenom||''}</div><div style="font-size:10px;color:var(--text3)">${gradeLabels[e.grade]||e.grade}</div></td>
+        <td><span class="badge badge-violet">${cm}h</span></td>
+        <td><span class="badge badge-emerald">${td}h</span></td>
         <td><span class="badge badge-amber">${tp}h</span></td>
+        <td style="font-weight:900;color:${pc}">${tot}h</td>
         <td>
-          <div style="font-weight:800;color:${c}">${tot}h</div>
-          <div class="progress-bar" style="width:80px;margin-top:4px"><div class="progress-fill" style="width:${pct}%;background:${c}"></div></div>
+          <div class="progress-bar" style="width:70px;"><div class="progress-fill" style="width:${pct}%;background:${pc}"></div></div>
+          <div style="font-size:10px;color:${pc};font-weight:700;margin-top:2px;">${pct}%</div>
         </td>
       </tr>`;
     }).join('');
   }
 
-  // Pie
-  const cm = data.modules.reduce((s, m) => s + m.cm * m.semaines, 0);
-  const td = data.modules.reduce((s, m) => s + m.td * m.semaines, 0);
-  const tp = data.modules.reduce((s, m) => s + m.tp * m.semaines, 0);
+  const cm = data.modules.reduce((s,m) => s+m.cm*m.semaines, 0);
+  const td = data.modules.reduce((s,m) => s+m.td*m.semaines, 0);
+  const tp = data.modules.reduce((s,m) => s+m.tp*m.semaines, 0);
+
   const ctx2 = document.getElementById('chartPie').getContext('2d');
-  if (chartPie) chartPie.destroy();
-  chartPie = new Chart(ctx2, {
+  if (charts.pie) charts.pie.destroy();
+  charts.pie = new Chart(ctx2, {
     type: 'doughnut',
     data: {
       labels: ['محاضرات CM', 'أعمال موجهة TD', 'أعمال تطبيقية TP'],
-      datasets: [{ data: [cm, td, tp], backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'], borderWidth: 0, hoverOffset: 8 }]
+      datasets: [{ data:[cm,td,tp], backgroundColor:['#6366f1','#10b981','#f59e0b'], borderWidth:0, hoverOffset:10 }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Cairo' }, padding: 12 } } }
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend:{ position:'bottom', labels:{color:'#a0a0c8', font:{family:'Tajawal'}, padding:14} } },
+      cutout: '65%'
     }
   });
 
-  // Bar Filières
   const ctx3 = document.getElementById('chartFilieres').getContext('2d');
-  if (chartFil) chartFil.destroy();
-  chartFil = new Chart(ctx3, {
+  if (charts.fil) charts.fil.destroy();
+  charts.fil = new Chart(ctx3, {
     type: 'bar',
     data: {
-      labels: data.filieres.map(f => f.code || f.nom),
+      labels: data.filieres.map(f => f.code||f.nom),
       datasets: [
-        { label: 'CM', data: data.filieres.map(f => data.modules.filter(m=>m.filiereId===f.id).reduce((s,m)=>s+m.cm*m.semaines,0)), backgroundColor: '#3b82f6', borderRadius: 4 },
-        { label: 'TD', data: data.filieres.map(f => data.modules.filter(m=>m.filiereId===f.id).reduce((s,m)=>s+m.td*m.semaines,0)), backgroundColor: '#10b981', borderRadius: 4 },
-        { label: 'TP', data: data.filieres.map(f => data.modules.filter(m=>m.filiereId===f.id).reduce((s,m)=>s+m.tp*m.semaines,0)), backgroundColor: '#f59e0b', borderRadius: 4 }
+        { label:'CM', data:data.filieres.map(f => data.modules.filter(m=>m.filiereId===f.id).reduce((s,m)=>s+m.cm*m.semaines,0)), backgroundColor:'#6366f1', borderRadius:6 },
+        { label:'TD', data:data.filieres.map(f => data.modules.filter(m=>m.filiereId===f.id).reduce((s,m)=>s+m.td*m.semaines,0)), backgroundColor:'#10b981', borderRadius:6 },
+        { label:'TP', data:data.filieres.map(f => data.modules.filter(m=>m.filiereId===f.id).reduce((s,m)=>s+m.tp*m.semaines,0)), backgroundColor:'#f59e0b', borderRadius:6 }
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Cairo' } } } },
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend:{ labels:{color:'#a0a0c8', font:{family:'Tajawal'}} } },
       scales: {
-        x: { stacked: true, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-        y: { stacked: true, ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+        x:{ stacked:true, ticks:{color:'#a0a0c8'}, grid:{color:'rgba(255,255,255,0.04)'} },
+        y:{ stacked:true, ticks:{color:'#a0a0c8'}, grid:{color:'rgba(255,255,255,0.06)'} }
       }
     }
   });
 }
 
-// ═══════════════════════════════
+// ══════════════════════════════════
 // FORECAST
-// ═══════════════════════════════
+// ══════════════════════════════════
 function calcForecast() {
-  const growth = parseFloat(document.getElementById('growth-rate').value) / 100 || 0;
+  const growth = parseFloat(document.getElementById('growth-rate').value)/100 || 0;
   const newFil = parseInt(document.getElementById('new-filieres').value) || 0;
   const newEns = parseInt(document.getElementById('new-enseignants').value) || 0;
-  const totalH = data.modules.reduce((s, m) => s + getTotalH(m), 0);
-  const cm = data.modules.reduce((s, m) => s + m.cm * m.semaines, 0);
-  const td = data.modules.reduce((s, m) => s + m.td * m.semaines, 0);
-  const tp = data.modules.reduce((s, m) => s + m.tp * m.semaines, 0);
-  const avgH = data.enseignants.length > 0 ? Math.round(totalH / data.enseignants.length) : 0;
-  const totalFuturs = data.filieres.length + newFil;
+  const totalH = getTotalDept();
+  const forecastH = Math.round(totalH * (1+growth));
   const totalEns = data.enseignants.length + newEns;
-  const forecastH = Math.round(totalH * (1 + growth));
-  const avgForecast = totalEns > 0 ? Math.round(forecastH / totalEns) : 0;
+  const avgForecast = totalEns > 0 ? Math.round(forecastH/totalEns) : 0;
 
   document.getElementById('forecast-content').innerHTML = `
     <div class="stat-grid">
-      <div class="stat-card purple">
-        <div class="stat-icon">⏱️</div>
-        <div class="stat-value">${totalH}</div>
-        <div class="stat-label">الحجم الحالي</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-icon">📈</div>
-        <div class="stat-value">${forecastH}</div>
-        <div class="stat-label">الحجم المتوقع</div>
-      </div>
-      <div class="stat-card amber">
-        <div class="stat-icon">👨‍🏫</div>
-        <div class="stat-value">${totalEns}</div>
-        <div class="stat-label">إجمالي الأساتذة</div>
-      </div>
-      <div class="stat-card blue">
-        <div class="stat-icon">⚖️</div>
-        <div class="stat-value">${avgForecast}</div>
-        <div class="stat-label">متوسط/أستاذ</div>
-      </div>
+      <div class="stat-card indigo"><div class="stat-icon">⏱️</div><div class="stat-value">${totalH}h</div><div class="stat-label">الحجم الحالي</div></div>
+      <div class="stat-card emerald"><div class="stat-icon">📈</div><div class="stat-value">${forecastH}h</div><div class="stat-label">الحجم المتوقع</div></div>
+      <div class="stat-card amber"><div class="stat-icon">👨‍🏫</div><div class="stat-value">${totalEns}</div><div class="stat-label">إجمالي الأساتذة</div></div>
+      <div class="stat-card sky"><div class="stat-icon">⚖️</div><div class="stat-value">${avgForecast}h</div><div class="stat-label">متوسط/أستاذ</div></div>
     </div>
-    <div style="font-size:12px; color:var(--text2); margin-top:8px;">
-      📊 الزيادة المتوقعة: <strong style="color:var(--primary-light)">+${Math.round(growth*100)}%</strong> · 
-      الشعب المستقبلية: <strong style="color:var(--accent)">${totalFuturs}</strong>
-    </div>
-  `;
+    <div style="font-size:12px;color:var(--text2);margin-top:4px;">
+      📊 الزيادة: <strong style="color:var(--indigo-light)">+${Math.round(growth*100)}%</strong> &nbsp;·&nbsp;
+      الشعب المستقبلية: <strong style="color:var(--emerald)">${data.filieres.length+newFil}</strong>
+    </div>`;
 
-  // Per teacher forecast
   const tEl = document.getElementById('forecast-teachers');
   if (!data.enseignants.length) {
-    tEl.innerHTML = '<div class="empty"><div class="empty-text">أضف أساتذة لرؤية التوقعات الفردية</div></div>';
+    tEl.innerHTML = '<div class="empty" style="padding:20px;"><div class="empty-text">أضف أساتذة لرؤية التوقعات الفردية</div></div>';
     return;
   }
-  const maxVal = Math.max(...data.enseignants.map(e => Math.round(getEnseignantH(e.id) * (1 + growth))), 1);
+  const maxFut = Math.max(...data.enseignants.map(e => Math.round(getEnseignantH(e.id)*(1+growth))), 1);
   tEl.innerHTML = data.enseignants.map(e => {
     const curr = getEnseignantH(e.id);
-    const fut = Math.round(curr * (1 + growth));
-    const pct = Math.round(fut / maxVal * 100);
-    const overload = fut > e.maxH;
-    return `<div class="forecast-bar">
-      <div class="forecast-label">${e.nom} ${e.prenom||''}</div>
-      <div class="forecast-track"><div class="progress-fill" style="width:${pct}%; background:${overload?'#ef4444':'#6366f1'}"></div></div>
-      <div class="forecast-value" style="color:${overload?'#ef4444':'var(--text)'};">${fut}h ${overload?'⚠️':''}</div>
+    const fut = Math.round(curr*(1+growth));
+    const pct = Math.round(fut/maxFut*100);
+    const over = fut > e.maxH;
+    return `<div class="forecast-row">
+      <div class="forecast-label">👤 ${e.nom}</div>
+      <div class="forecast-track"><div class="progress-fill" style="width:${pct}%;background:${over?'#f43f5e':'#6366f1'};"></div></div>
+      <div class="forecast-val" style="color:${over?'#f43f5e':'var(--text)'};">${fut}h ${over?'⚠️':''}</div>
     </div>`;
   }).join('');
 }
 
-// ═══════════════════════════════
+// ══════════════════════════════════
+// EXPORT PDF
+// ══════════════════════════════════
+function showExportMenu() { showModal('modal-export'); }
+
+function exportPDF(type = 'full') {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210; const ML = 14; const MR = 14;
+  const year = new Date().getFullYear();
+
+  // Header
+  doc.setFillColor(26, 26, 53);
+  doc.rect(0, 0, W, 32, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+  doc.text('Gestion du Volume Horaire — Departement Informatique', W/2, 14, { align: 'center' });
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+  doc.text(`Annee universitaire ${year}/${year+1} | Genere le ${new Date().toLocaleDateString('fr-MA')}`, W/2, 22, { align: 'center' });
+  doc.setTextColor(0,0,0);
+
+  let y = 40;
+
+  // Stats summary box
+  const totalH = getTotalDept();
+  const avg = data.enseignants.length > 0 ? Math.round(totalH/data.enseignants.length) : 0;
+  const cm = data.modules.reduce((s,m) => s+m.cm*m.semaines, 0);
+  const td = data.modules.reduce((s,m) => s+m.td*m.semaines, 0);
+  const tp = data.modules.reduce((s,m) => s+m.tp*m.semaines, 0);
+
+  if (type === 'full' || type === 'stats') {
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(99,102,241);
+    doc.text('Resume du departement', ML, y); y += 6;
+    doc.setTextColor(0,0,0); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+
+    doc.autoTable({
+      startY: y,
+      head: [['Indicateur', 'Valeur']],
+      body: [
+        ['Nombre d\'enseignants', data.enseignants.length],
+        ['Nombre de filieres', data.filieres.length],
+        ['Nombre de modules', data.modules.length],
+        ['Volume horaire total (heures)', totalH + 'h'],
+        ['Volume CM total', cm + 'h'],
+        ['Volume TD total', td + 'h'],
+        ['Volume TP total', tp + 'h'],
+        ['Moyenne par enseignant', avg + 'h'],
+      ],
+      styles: { font: 'helvetica', fontSize: 10, cellPadding: 4 },
+      headStyles: { fillColor: [26,26,53], textColor: [255,255,255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248,249,255] },
+      margin: { left: ML, right: MR }
+    });
+    y = doc.lastAutoTable.finalY + 12;
+  }
+
+  if (type === 'full' || type === 'enseignants') {
+    if (y > 220) { doc.addPage(); y = 20; }
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(99,102,241);
+    doc.text('Liste des enseignants et volume horaire', ML, y); y += 6;
+    doc.setTextColor(0,0,0);
+    doc.autoTable({
+      startY: y,
+      head: [['Enseignant', 'Grade', 'Specialite', 'CM (h)', 'TD (h)', 'TP (h)', 'Total (h)', 'Max (h)', 'Charge %']],
+      body: data.enseignants.map(e => {
+        const mods = data.modules.filter(m => m.enseignantId === e.id);
+        const cmE = mods.reduce((s,m) => s+m.cm*m.semaines, 0);
+        const tdE = mods.reduce((s,m) => s+m.td*m.semaines, 0);
+        const tpE = mods.reduce((s,m) => s+m.tp*m.semaines, 0);
+        const tot = cmE+tdE+tpE;
+        const pct = e.maxH > 0 ? Math.round(tot/e.maxH*100) : 0;
+        return [e.nom+' '+(e.prenom||''), gradeLabels[e.grade]||e.grade, e.specialite||'—', cmE, tdE, tpE, tot, e.maxH, pct+'%'];
+      }),
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [26,26,53], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8 },
+      alternateRowStyles: { fillColor: [248,249,255] },
+      columnStyles: { 0:{cellWidth:32}, 1:{cellWidth:20}, 2:{cellWidth:25} },
+      margin: { left: ML, right: MR }
+    });
+    y = doc.lastAutoTable.finalY + 12;
+  }
+
+  if (type === 'full' || type === 'modules') {
+    if (y > 220) { doc.addPage(); y = 20; }
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(99,102,241);
+    doc.text('Liste des modules', ML, y); y += 6;
+    doc.setTextColor(0,0,0);
+    doc.autoTable({
+      startY: y,
+      head: [['Module', 'Filiere', 'Semestre', 'Enseignant', 'CM', 'TD', 'TP', 'Total']],
+      body: data.modules.map(m => {
+        const f = data.filieres.find(x => x.id === m.filiereId);
+        const e = data.enseignants.find(x => x.id === m.enseignantId);
+        return [
+          m.nom, f ? (f.code||f.nom) : '—', m.semestre||'—',
+          e ? e.nom+' '+(e.prenom||'') : 'Non assigne',
+          m.cm*m.semaines+'h', m.td*m.semaines+'h', m.tp*m.semaines+'h', getTotalH(m)+'h'
+        ];
+      }),
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [26,26,53], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8 },
+      alternateRowStyles: { fillColor: [248,249,255] },
+      columnStyles: { 0:{cellWidth:35} },
+      margin: { left: ML, right: MR }
+    });
+  }
+
+  // Footer on all pages
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8); doc.setTextColor(150,150,150);
+    doc.text(`Page ${i} / ${totalPages}`, W/2, 290, { align: 'center' });
+    doc.text('Systeme de gestion du volume horaire — Departement Informatique', ML, 290);
+  }
+
+  const filename = `volume_horaire_${type}_${new Date().toISOString().slice(0,10)}.pdf`;
+  doc.save(filename);
+  hideModal('modal-export');
+  toast('✅ تم تصدير PDF بنجاح!');
+}
+
+// ══════════════════════════════════
+// EXPORT CSV
+// ══════════════════════════════════
+function exportCSV() {
+  const rows = [
+    ['Enseignant', 'Prenom', 'Grade', 'Specialite', 'Max H', 'CM Total', 'TD Total', 'TP Total', 'Total H', 'Charge %'],
+    ...data.enseignants.map(e => {
+      const mods = data.modules.filter(m => m.enseignantId === e.id);
+      const cm = mods.reduce((s,m) => s+m.cm*m.semaines, 0);
+      const td = mods.reduce((s,m) => s+m.td*m.semaines, 0);
+      const tp = mods.reduce((s,m) => s+m.tp*m.semaines, 0);
+      const tot = cm+td+tp;
+      const pct = e.maxH > 0 ? Math.round(tot/e.maxH*100) : 0;
+      return [e.nom, e.prenom||'', gradeLabels[e.grade]||e.grade, e.specialite||'', e.maxH, cm, td, tp, tot, pct+'%'];
+    })
+  ];
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  downloadFile(`volume_horaire_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8;', '\uFEFF' + csv);
+  hideModal('modal-export');
+  toast('✅ تم تصدير CSV بنجاح!');
+}
+
+// ══════════════════════════════════
+// EXPORT / IMPORT JSON
+// ══════════════════════════════════
+function exportJSON() {
+  const content = JSON.stringify({ version: 2, exportDate: new Date().toISOString(), data }, null, 2);
+  downloadFile(`backup_vol_horaire_${new Date().toISOString().slice(0,10)}.json`, 'application/json', content);
+  hideModal('modal-export');
+  toast('✅ تم تصدير النسخة الاحتياطية!');
+}
+function importJSON() {
+  document.getElementById('import-file').click();
+}
+function handleImport(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      const imported = parsed.data || parsed;
+      const ok = await confirm2({
+        icon: '📥', title: 'استيراد البيانات',
+        msg: `سيتم استيراد ${imported.enseignants?.length||0} أستاذ و${imported.modules?.length||0} مادة. سيتم استبدال البيانات الحالية.`,
+        ok: 'استيراد', btnClass: 'btn-primary'
+      });
+      if (!ok) return;
+      data = imported;
+      saveData();
+      renderDashboard();
+      toast('✅ تم الاستيراد بنجاح!');
+    } catch {
+      toast('⚠️ ملف غير صالح', '#ef4444');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ══════════════════════════════════
+// PRINT
+// ══════════════════════════════════
+function printPage() {
+  window.print();
+}
+
+// ══════════════════════════════════
+// UTILS
+// ══════════════════════════════════
+function downloadFile(filename, mime, content) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════
 // INIT
-// ═══════════════════════════════
+// ══════════════════════════════════
 loadData();
 renderDashboard();
 
-// PWA service worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
