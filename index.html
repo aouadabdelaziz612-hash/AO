@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VolHoraire">
+<link rel="manifest" href="manifest.json">
+<title>إدارة الحجم الساعي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #263548;
+    --border: #334155;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --primary-dark: #4f46e5;
+    --accent: #10b981;
+    --accent2: #f59e0b;
+    --accent3: #ef4444;
+    --accent4: #3b82f6;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --radius: 14px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --nav-h: 68px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding-bottom: var(--nav-h);
+  }
+  /* ─── TOP BAR ─── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(15,23,42,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar-title { font-size: 18px; font-weight: 800; color: var(--text); }
+  .topbar-sub { font-size: 11px; color: var(--primary-light); font-weight: 500; }
+  .topbar-icon {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  /* ─── BOTTOM NAV ─── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(19,28,45,0.97);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    height: var(--nav-h);
+    display: flex; align-items: center;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 8px 4px; cursor: pointer;
+    border: none; background: none; color: var(--text3);
+    font-family: 'Cairo', sans-serif; font-size: 10px; font-weight: 600;
+    transition: color 0.2s;
+  }
+  .nav-item .nav-icon { font-size: 22px; transition: transform 0.2s; }
+  .nav-item.active { color: var(--primary-light); }
+  .nav-item.active .nav-icon { transform: scale(1.15); }
+  /* ─── PAGES ─── */
+  .page { display: none; padding: 16px; animation: fadeIn 0.25s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
+  }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--text2); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+  /* ─── STAT GRID ─── */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .stat-card {
+    border-radius: var(--radius); padding: 16px 14px;
+    position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: -20px; left: -20px;
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+  }
+  .stat-card.purple { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+  .stat-card.green  { background: linear-gradient(135deg, #059669, #10b981); }
+  .stat-card.amber  { background: linear-gradient(135deg, #d97706, #f59e0b); }
+  .stat-card.blue   { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+  .stat-card.red    { background: linear-gradient(135deg, #dc2626, #ef4444); }
+  .stat-card.teal   { background: linear-gradient(135deg, #0d9488, #14b8a6); }
+  .stat-value { font-size: 28px; font-weight: 900; color: #fff; }
+  .stat-label { font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 600; margin-top: 2px; }
+  .stat-icon { font-size: 24px; margin-bottom: 8px; }
+  /* ─── SECTION HEADER ─── */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+  }
+  .section-title { font-size: 16px; font-weight: 800; color: var(--text); }
+  /* ─── BUTTONS ─── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px; border-radius: 10px; border: none;
+    font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:active { background: var(--primary-dark); transform: scale(0.97); }
+  .btn-success { background: var(--accent); color: #fff; }
+  .btn-danger { background: var(--accent3); color: #fff; }
+  .btn-outline { background: transparent; color: var(--primary-light); border: 1.5px solid var(--primary); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+  .btn-icon { padding: 8px; border-radius: 10px; background: var(--surface2); border: none; color: var(--text2); cursor: pointer; font-size: 16px; }
+  /* ─── LIST ITEMS ─── */
+  .list-item {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .list-item-icon {
+    width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .list-item-body { flex: 1; min-width: 0; }
+  .list-item-title { font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list-item-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .list-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  /* ─── BADGE ─── */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;
+  }
+  .badge-purple { background: rgba(99,102,241,0.2); color: var(--primary-light); }
+  .badge-green  { background: rgba(16,185,129,0.2); color: #34d399; }
+  .badge-amber  { background: rgba(245,158,11,0.2); color: #fbbf24; }
+  .badge-blue   { background: rgba(59,130,246,0.2); color: #60a5fa; }
+  .badge-red    { background: rgba(239,68,68,0.2); color: #f87171; }
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    display: flex; align-items: flex-end; justify-content: center;
+    animation: fadeIn 0.2s;
+  }
+  .modal {
+    background: var(--surface); border-radius: 20px 20px 0 0;
+    border: 1px solid var(--border); border-bottom: none;
+    width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto;
+    padding: 24px 20px 40px; animation: slideUp 0.3s cubic-bezier(.16,1,.3,1);
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--text); }
+  .modal-handle {
+    width: 40px; height: 4px; border-radius: 2px; background: var(--border);
+    margin: 0 auto 20px;
+  }
+  /* ─── FORM ─── */
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 6px; }
+  .form-input, .form-select {
+    width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 11px 14px; color: var(--text);
+    font-family: 'Cairo', sans-serif; font-size: 14px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--primary); }
+  .form-input::placeholder { color: var(--text3); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  /* ─── PROGRESS BAR ─── */
+  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+  /* ─── TABLE ─── */
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--surface2); }
+  th { padding: 12px 14px; text-align: right; font-weight: 700; color: var(--text2); font-size: 11px; white-space: nowrap; }
+  td { padding: 11px 14px; border-top: 1px solid var(--border); color: var(--text); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  /* ─── FORECAST CARD ─── */
+  .forecast-bar {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  }
+  .forecast-label { font-size: 13px; font-weight: 600; width: 130px; flex-shrink: 0; color: var(--text2); }
+  .forecast-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .forecast-value { font-size: 12px; font-weight: 700; width: 50px; text-align: left; flex-shrink: 0; }
+  /* ─── EMPTY STATE ─── */
+  .empty { text-align: center; padding: 40px 20px; color: var(--text3); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; font-weight: 600; }
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #fff; padding: 10px 20px;
+    border-radius: 30px; font-size: 13px; font-weight: 700;
+    z-index: 300; animation: toastIn 0.3s ease;
+    box-shadow: 0 4px 20px rgba(16,185,129,0.4);
+  }
+  @keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(-10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+  /* ─── CHART ─── */
+  .chart-wrap { position: relative; height: 220px; }
+  /* ─── TABS ─── */
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; }
+  .tab-btn {
+    flex-shrink: 0; padding: 8px 16px; border-radius: 20px; border: none;
+    font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; background: var(--surface2); color: var(--text3);
+    transition: all 0.2s;
+  }
+  .tab-btn.active { background: var(--primary); color: #fff; }
+  /* ─── SEARCH ─── */
+  .search-box {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 14px;
+  }
+  .search-box input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text); font-family: 'Cairo', sans-serif; font-size: 14px;
+  }
+  .search-box input::placeholder { color: var(--text3); }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title" id="pageTitle">لوحة القيادة</div>
+    <div class="topbar-sub">قسم الإعلاميات</div>
+  </div>
+  <div class="topbar-icon">📊</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE 1: DASHBOARD
+═══════════════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+
+  <!-- Hero Stats -->
+  <div class="stat-grid">
+    <div class="stat-card purple">
+      <div class="stat-icon">👨‍🏫</div>
+      <div class="stat-value" id="s-enseignants">0</div>
+      <div class="stat-label">أستاذ</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-icon">📚</div>
+      <div class="stat-value" id="s-modules">0</div>
+      <div class="stat-label">مادة</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-icon">🎓</div>
+      <div class="stat-value" id="s-filieres">0</div>
+      <div class="stat-label">شعبة</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon">⏱️</div>
+      <div class="stat-value" id="s-total-h">0</div>
+      <div class="stat-label">ساعة إجمالية</div>
+    </div>
+  </div>
+
+  <!-- Repartition par type -->
+  <div class="card">
+    <div class="card-title">التوزيع حسب نوع الحصة</div>
+    <div class="stat-grid">
+      <div class="stat-card blue" style="grid-column: 1">
+        <div class="stat-icon">🎙️</div>
+        <div class="stat-value" id="s-cm">0</div>
+        <div class="stat-label">محاضرات CM</div>
+      </div>
+      <div class="stat-card green" style="grid-column: 2">
+        <div class="stat-icon">📝</div>
+        <div class="stat-value" id="s-td">0</div>
+        <div class="stat-label">أعمال موجهة TD</div>
+      </div>
+    </div>
+    <div class="stat-card teal" style="grid-column: span 2">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div class="stat-icon">🔬</div>
+          <div class="stat-value" id="s-tp">0</div>
+          <div class="stat-label">أعمال تطبيقية TP</div>
+        </div>
+        <div style="text-align:left">
+          <div class="stat-value" id="s-avg">0</div>
+          <div class="stat-label">متوسط الحجم/أستاذ</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="card">
+    <div class="card-title">الحجم الساعي لكل أستاذ</div>
+    <div class="chart-wrap">
+      <canvas id="chartEnseignants"></canvas>
+    </div>
+    <div id="chart-empty" class="empty" style="display:none;">
+      <div class="empty-icon">📉</div>
+      <div class="empty-text">أضف أساتذة ومواد لرؤية الرسم البياني</div>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="card">
+    <div class="card-title">إجراءات سريعة</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <button class="btn btn-primary" onclick="goTo('filieres')">➕ شعبة جديدة</button>
+      <button class="btn btn-success" onclick="goTo('enseignants')">➕ أستاذ جديد</button>
+      <button class="btn btn-outline" onclick="goTo('modules')">📚 إضافة مادة</button>
+      <button class="btn btn-outline" onclick="goTo('stats')">📊 الإحصائيات</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE 2: FILIÈRES
+═══════════════════════════════════════════ -->
+<div class="page" id="page-filieres">
+  <div class="section-header">
+    <div class="section-title">الشعب والتخصصات</div>
+    <button class="btn btn-primary btn-sm" onclick="showModal('modal-filiere')">➕ إضافة</button>
+  </div>
+  <div id="list-filieres"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE 3: ENSEIGNANTS
+═══════════════════════════════════════════ -->
+<div class="page" id="page-enseignants">
+  <div class="section-header">
+    <div class="section-title">الأساتذة</div>
+    <button class="btn btn-primary btn-sm" onclick="showModal('modal-enseignant')">➕ إضافة</button>
+  </div>
+  <div class="search-box">
+    <span>🔍</span>
+    <input type="text" placeholder="ابحث عن أستاذ..." id="search-enseignant" oninput="renderEnseignants()">
+  </div>
+  <div id="list-enseignants"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE 4: MODULES
+═══════════════════════════════════════════ -->
+<div class="page" id="page-modules">
+  <div class="section-header">
+    <div class="section-title">المواد والحجم الساعي</div>
+    <button class="btn btn-primary btn-sm" onclick="showModal('modal-module')">➕ إضافة</button>
+  </div>
+  <div class="tabs" id="filiere-tabs"></div>
+  <div id="list-modules"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE 5: STATISTIQUES
+═══════════════════════════════════════════ -->
+<div class="page" id="page-stats">
+  <div class="section-title" style="margin-bottom:14px">الإحصائيات والتقارير</div>
+
+  <!-- Table enseignants -->
+  <div class="card">
+    <div class="card-title">تفصيل الحجم الساعي لكل أستاذ</div>
+    <div class="table-wrap">
+      <table id="table-stats">
+        <thead>
+          <tr>
+            <th>الأستاذ</th>
+            <th>CM</th>
+            <th>TD</th>
+            <th>TP</th>
+            <th>المجموع</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-stats"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Chart pie -->
+  <div class="card">
+    <div class="card-title">التوزيع النسبي لأنواع الحصص</div>
+    <div class="chart-wrap">
+      <canvas id="chartPie"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart bar par filiere -->
+  <div class="card">
+    <div class="card-title">الحجم الساعي حسب الشعبة</div>
+    <div class="chart-wrap">
+      <canvas id="chartFilieres"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE 6: PREVISIONS
+═══════════════════════════════════════════ -->
+<div class="page" id="page-previsions">
+  <div class="section-title" style="margin-bottom:14px">🔮 التوقعات للسنة القادمة</div>
+
+  <div class="card">
+    <div class="card-title">معاملات التوقع</div>
+    <div class="form-group">
+      <label class="form-label">نسبة الزيادة المتوقعة (%)</label>
+      <input type="range" min="0" max="50" value="10" id="growth-rate"
+        oninput="document.getElementById('growth-val').textContent=this.value+'%'; calcForecast();"
+        style="width:100%; accent-color: var(--primary);">
+      <div style="text-align:center; font-size:22px; font-weight:900; color:var(--primary-light); margin:6px 0;" id="growth-val">10%</div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label">شعب جديدة متوقعة</label>
+        <input type="number" class="form-input" id="new-filieres" value="0" min="0" oninput="calcForecast()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">أساتذة جدد متوقعون</label>
+        <input type="number" class="form-input" id="new-enseignants" value="0" min="0" oninput="calcForecast()">
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="forecast-result">
+    <div class="card-title">نتائج التوقع</div>
+    <div id="forecast-content"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">توقع الحجم لكل أستاذ</div>
+    <div id="forecast-teachers"></div>
+  </div>
+</div>
+
+<!-- ─── BOTTOM NAV ─── -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
+    <span class="nav-icon">🏠</span>الرئيسية
+  </button>
+  <button class="nav-item" onclick="navigate('filieres')" id="nav-filieres">
+    <span class="nav-icon">🎓</span>الشعب
+  </button>
+  <button class="nav-item" onclick="navigate('enseignants')" id="nav-enseignants">
+    <span class="nav-icon">👨‍🏫</span>الأساتذة
+  </button>
+  <button class="nav-item" onclick="navigate('modules')" id="nav-modules">
+    <span class="nav-icon">📚</span>المواد
+  </button>
+  <button class="nav-item" onclick="navigate('stats')" id="nav-stats">
+    <span class="nav-icon">📊</span>إحصاء
+  </button>
+  <button class="nav-item" onclick="navigate('previsions')" id="nav-previsions">
+    <span class="nav-icon">🔮</span>توقعات
+  </button>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════ -->
+
+<!-- Modal Filière -->
+<div class="modal-overlay" id="modal-filiere" style="display:none;" onclick="closeModalOutside(event,'modal-filiere')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">➕ إضافة شعبة</div>
+    <div class="form-group">
+      <label class="form-label">اسم الشعبة</label>
+      <input type="text" class="form-input" id="f-nom" placeholder="مثال: الإعلاميات - السنة الثالثة">
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label">الرمز</label>
+        <input type="text" class="form-input" id="f-code" placeholder="مثال: INFO3">
+      </div>
+      <div class="form-group">
+        <label class="form-label">عدد الطلاب</label>
+        <input type="number" class="form-input" id="f-etudiants" placeholder="30">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">القاعة / المحل</label>
+      <input type="text" class="form-input" id="f-local" placeholder="مثال: قاعة A - 101">
+    </div>
+    <input type="hidden" id="f-edit-id">
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1" onclick="saveFiliere()">💾 حفظ</button>
+      <button class="btn btn-outline" style="flex:1" onclick="hideModal('modal-filiere')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Enseignant -->
+<div class="modal-overlay" id="modal-enseignant" style="display:none;" onclick="closeModalOutside(event,'modal-enseignant')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👨‍🏫 إضافة أستاذ</div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label">الاسم</label>
+        <input type="text" class="form-input" id="e-nom" placeholder="الاسم الأخير">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الاسم الأول</label>
+        <input type="text" class="form-input" id="e-prenom" placeholder="الاسم الأول">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">البريد الإلكتروني</label>
+      <input type="email" class="form-input" id="e-email" placeholder="example@univ.ma">
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label">الرتبة</label>
+        <select class="form-select" id="e-grade">
+          <option value="أستاذ محاضر">أستاذ محاضر</option>
+          <option value="أستاذ التعليم العالي">أستاذ التعليم العالي</option>
+          <option value="أستاذ مساعد">أستاذ مساعد</option>
+          <option value="مؤطر">مؤطر</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الحجم الساعي الأقصى</label>
+        <input type="number" class="form-input" id="e-max-h" value="192" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">التخصص</label>
+      <input type="text" class="form-input" id="e-specialite" placeholder="مثال: شبكات، برمجة، قواعد البيانات...">
+    </div>
+    <input type="hidden" id="e-edit-id">
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1" onclick="saveEnseignant()">💾 حفظ</button>
+      <button class="btn btn-outline" style="flex:1" onclick="hideModal('modal-enseignant')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Module -->
+<div class="modal-overlay" id="modal-module" style="display:none;" onclick="closeModalOutside(event,'modal-module')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📚 إضافة مادة</div>
+    <div class="form-group">
+      <label class="form-label">اسم المادة</label>
+      <input type="text" class="form-input" id="m-nom" placeholder="مثال: قواعد البيانات">
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label">الشعبة</label>
+        <select class="form-select" id="m-filiere"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الأستاذ المسؤول</label>
+        <select class="form-select" id="m-enseignant">
+          <option value="">— اختر أستاذاً —</option>
+        </select>
+      </div>
+    </div>
+    <div class="card-title" style="margin-top:6px;">ساعات الحصص الأسبوعية</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">CM (محاضرات)</label>
+        <input type="number" class="form-input" id="m-cm" value="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">TD (موجهة)</label>
+        <input type="number" class="form-input" id="m-td" value="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">TP (تطبيقية)</label>
+        <input type="number" class="form-input" id="m-tp" value="0" min="0">
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label">عدد الأسابيع</label>
+        <input type="number" class="form-input" id="m-semaines" value="16" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الفصل الدراسي</label>
+        <select class="form-select" id="m-semestre">
+          <option value="S1">الفصل 1</option>
+          <option value="S2">الفصل 2</option>
+          <option value="سنوي">سنوي</option>
+        </select>
+      </div>
+    </div>
+    <input type="hidden" id="m-edit-id">
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1" onclick="saveModule()">💾 حفظ</button>
+      <button class="btn btn-outline" style="flex:1" onclick="hideModal('modal-module')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Enseignant Modal -->
+<div class="modal-overlay" id="modal-detail-ens" style="display:none;" onclick="closeModalOutside(event,'modal-detail-ens')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="detail-ens-content"></div>
+    <button class="btn btn-outline" style="width:100%; margin-top:14px;" onclick="hideModal('modal-detail-ens')">إغلاق</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════
+// DATA
+// ═══════════════════════════════
+let data = {
+  filieres: [],
+  enseignants: [],
+  modules: []
+};
+let chartEns, chartPie, chartFil;
+let currentFiliereTab = 'all';
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem('vol_horaire_data');
+    if (saved) data = JSON.parse(saved);
+  } catch(e) {}
+}
+function saveData() {
+  localStorage.setItem('vol_horaire_data', JSON.stringify(data));
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+// ═══════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════
+const pageTitles = {
+  dashboard: 'لوحة القيادة',
+  filieres: 'الشعب والتخصصات',
+  enseignants: 'الأساتذة',
+  modules: 'المواد والمقررات',
+  stats: 'الإحصائيات',
+  previsions: 'التوقعات'
+};
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  document.getElementById('pageTitle').textContent = pageTitles[page];
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'filieres') renderFilieres();
+  if (page === 'enseignants') renderEnseignants();
+  if (page === 'modules') renderModules();
+  if (page === 'stats') renderStats();
+  if (page === 'previsions') calcForecast();
+  window.scrollTo(0, 0);
+}
+function goTo(page) { navigate(page); }
+
+// ═══════════════════════════════
+// MODALS
+// ═══════════════════════════════
+function showModal(id) {
+  if (id === 'modal-module') fillModuleSelects();
+  if (id === 'modal-filiere') { clearFiliere(); }
+  if (id === 'modal-enseignant') { clearEnseignant(); }
+  document.getElementById(id).style.display = 'flex';
+}
+function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+function closeModalOutside(e, id) {
+  if (e.target.classList.contains('modal-overlay')) hideModal(id);
+}
+function toast(msg, color='var(--accent)') {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  t.style.background = color;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+// ═══════════════════════════════
+// FILIÈRES
+// ═══════════════════════════════
+function clearFiliere() {
+  ['f-nom','f-code','f-local','f-etudiants','f-edit-id'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+function saveFiliere() {
+  const nom = document.getElementById('f-nom').value.trim();
+  if (!nom) { toast('أدخل اسم الشعبة', '#ef4444'); return; }
+  const editId = document.getElementById('f-edit-id').value;
+  const obj = {
+    id: editId || uid(),
+    nom,
+    code: document.getElementById('f-code').value.trim(),
+    local: document.getElementById('f-local').value.trim(),
+    etudiants: parseInt(document.getElementById('f-etudiants').value) || 0
+  };
+  if (editId) {
+    const idx = data.filieres.findIndex(f => f.id === editId);
+    if (idx !== -1) data.filieres[idx] = obj;
+  } else {
+    data.filieres.push(obj);
+  }
+  saveData(); hideModal('modal-filiere'); renderFilieres(); toast('✅ تم حفظ الشعبة');
+}
+function editFiliere(id) {
+  const f = data.filieres.find(x => x.id === id);
+  if (!f) return;
+  document.getElementById('f-nom').value = f.nom;
+  document.getElementById('f-code').value = f.code || '';
+  document.getElementById('f-local').value = f.local || '';
+  document.getElementById('f-etudiants').value = f.etudiants || '';
+  document.getElementById('f-edit-id').value = f.id;
+  document.getElementById('modal-filiere').querySelector('.modal-title').textContent = '✏️ تعديل الشعبة';
+  showModal('modal-filiere');
+}
+function deleteFiliere(id) {
+  if (!confirm('هل تريد حذف هذه الشعبة؟')) return;
+  data.filieres = data.filieres.filter(f => f.id !== id);
+  data.modules = data.modules.filter(m => m.filiereId !== id);
+  saveData(); renderFilieres(); renderDashboard();
+  toast('🗑️ تم الحذف', '#ef4444');
+}
+function renderFilieres() {
+  const list = document.getElementById('list-filieres');
+  if (!data.filieres.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🎓</div><div class="empty-text">لا توجد شعب بعد، أضف شعبة جديدة!</div></div>`;
+    return;
+  }
+  const colors = ['purple','green','amber','blue','teal','red'];
+  list.innerHTML = data.filieres.map((f, i) => {
+    const nbModules = data.modules.filter(m => m.filiereId === f.id).length;
+    const totalH = data.modules.filter(m => m.filiereId === f.id)
+      .reduce((s, m) => s + getTotalH(m), 0);
+    return `
+    <div class="list-item">
+      <div class="list-item-icon" style="background:var(--surface)">🎓</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${f.nom}</div>
+        <div class="list-item-sub">
+          ${f.code ? `<span class="badge badge-purple">${f.code}</span> ` : ''}
+          ${nbModules} مادة · ${totalH}h
+          ${f.local ? ` · ${f.local}` : ''}
+          ${f.etudiants ? ` · ${f.etudiants} طالب` : ''}
+        </div>
+      </div>
+      <div class="list-item-actions">
+        <button class="btn-icon" onclick="editFiliere('${f.id}')">✏️</button>
+        <button class="btn-icon" style="color:#ef4444" onclick="deleteFiliere('${f.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════
+// ENSEIGNANTS
+// ═══════════════════════════════
+function clearEnseignant() {
+  ['e-nom','e-prenom','e-email','e-specialite','e-edit-id'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('e-max-h').value = 192;
+}
+function saveEnseignant() {
+  const nom = document.getElementById('e-nom').value.trim();
+  if (!nom) { toast('أدخل اسم الأستاذ', '#ef4444'); return; }
+  const editId = document.getElementById('e-edit-id').value;
+  const obj = {
+    id: editId || uid(),
+    nom, prenom: document.getElementById('e-prenom').value.trim(),
+    email: document.getElementById('e-email').value.trim(),
+    grade: document.getElementById('e-grade').value,
+    maxH: parseInt(document.getElementById('e-max-h').value) || 192,
+    specialite: document.getElementById('e-specialite').value.trim()
+  };
+  if (editId) {
+    const idx = data.enseignants.findIndex(e => e.id === editId);
+    if (idx !== -1) data.enseignants[idx] = obj;
+  } else {
+    data.enseignants.push(obj);
+  }
+  saveData(); hideModal('modal-enseignant'); renderEnseignants(); toast('✅ تم حفظ الأستاذ');
+}
+function editEnseignant(id) {
+  const e = data.enseignants.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('e-nom').value = e.nom;
+  document.getElementById('e-prenom').value = e.prenom || '';
+  document.getElementById('e-email').value = e.email || '';
+  document.getElementById('e-grade').value = e.grade;
+  document.getElementById('e-max-h').value = e.maxH;
+  document.getElementById('e-specialite').value = e.specialite || '';
+  document.getElementById('e-edit-id').value = e.id;
+  document.getElementById('modal-enseignant').querySelector('.modal-title').textContent = '✏️ تعديل الأستاذ';
+  showModal('modal-enseignant');
+}
+function deleteEnseignant(id) {
+  if (!confirm('هل تريد حذف هذا الأستاذ؟')) return;
+  data.enseignants = data.enseignants.filter(e => e.id !== id);
+  data.modules = data.modules.map(m => m.enseignantId === id ? {...m, enseignantId: ''} : m);
+  saveData(); renderEnseignants(); toast('🗑️ تم الحذف', '#ef4444');
+}
+function getEnseignantH(id) {
+  return data.modules.filter(m => m.enseignantId === id).reduce((s, m) => s + getTotalH(m), 0);
+}
+function showDetailEnseignant(id) {
+  const e = data.enseignants.find(x => x.id === id);
+  if (!e) return;
+  const modules = data.modules.filter(m => m.enseignantId === id);
+  const cm = modules.reduce((s, m) => s + (m.cm * m.semaines), 0);
+  const td = modules.reduce((s, m) => s + (m.td * m.semaines), 0);
+  const tp = modules.reduce((s, m) => s + (m.tp * m.semaines), 0);
+  const total = cm + td + tp;
+  const pct = e.maxH > 0 ? Math.min(100, Math.round(total / e.maxH * 100)) : 0;
+  const pctColor = pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#10b981';
+  document.getElementById('detail-ens-content').innerHTML = `
+    <div class="modal-title">👨‍🏫 ${e.nom} ${e.prenom || ''}</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+      <span class="badge badge-purple">${e.grade}</span>
+      ${e.specialite ? `<span class="badge badge-blue">${e.specialite}</span>` : ''}
+      ${e.email ? `<span class="badge badge-green">${e.email}</span>` : ''}
+    </div>
+    <div class="stat-grid" style="margin-bottom:14px;">
+      <div class="stat-card blue"><div class="stat-icon">🎙️</div><div class="stat-value">${cm}</div><div class="stat-label">ساعة CM</div></div>
+      <div class="stat-card green"><div class="stat-icon">📝</div><div class="stat-value">${td}</div><div class="stat-label">ساعة TD</div></div>
+      <div class="stat-card teal"><div class="stat-icon">🔬</div><div class="stat-value">${tp}</div><div class="stat-label">ساعة TP</div></div>
+      <div class="stat-card purple"><div class="stat-icon">⏱️</div><div class="stat-value">${total}</div><div class="stat-label">المجموع</div></div>
+    </div>
+    <div style="font-size:12px; color:var(--text2); margin-bottom:4px;">نسبة استغلال الحجم (${total}/${e.maxH}h)</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background:${pctColor}"></div></div>
+    <div style="font-size:11px; color:${pctColor}; font-weight:700; margin-top:4px; margin-bottom:14px;">${pct}%</div>
+    ${modules.length ? `
+    <div class="card-title">المواد المسندة</div>
+    ${modules.map(m => {
+      const f = data.filieres.find(x => x.id === m.filiereId);
+      return `<div class="list-item" style="margin-bottom:8px;">
+        <div class="list-item-icon" style="background:rgba(99,102,241,0.15); color:var(--primary-light);">📚</div>
+        <div class="list-item-body">
+          <div class="list-item-title">${m.nom}</div>
+          <div class="list-item-sub">${f ? f.nom : '—'} · CM:${m.cm*m.semaines}h TD:${m.td*m.semaines}h TP:${m.tp*m.semaines}h</div>
+        </div>
+      </div>`;
+    }).join('')}` : '<div class="empty" style="padding:20px"><div class="empty-text">لا توجد مواد مسندة بعد</div></div>'}
+  `;
+  showModal('modal-detail-ens');
+}
+function renderEnseignants() {
+  const list = document.getElementById('list-enseignants');
+  const q = document.getElementById('search-enseignant').value.toLowerCase();
+  let ens = data.enseignants;
+  if (q) ens = ens.filter(e => (e.nom + ' ' + (e.prenom||'')).toLowerCase().includes(q));
+  if (!ens.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">👨‍🏫</div><div class="empty-text">${q ? 'لا نتائج' : 'لا يوجد أساتذة، أضف أستاذاً جديداً!'}</div></div>`;
+    return;
+  }
+  list.innerHTML = ens.map(e => {
+    const total = getEnseignantH(e.id);
+    const pct = e.maxH > 0 ? Math.min(100, Math.round(total / e.maxH * 100)) : 0;
+    const pctColor = pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#10b981';
+    return `
+    <div class="list-item" onclick="showDetailEnseignant('${e.id}')" style="cursor:pointer;">
+      <div class="list-item-icon" style="background:rgba(99,102,241,0.15); font-size:22px;">👤</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${e.nom} ${e.prenom || ''}</div>
+        <div class="list-item-sub">
+          <span class="badge badge-purple">${e.grade}</span>
+          ${e.specialite ? ` · ${e.specialite}` : ''}
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+          <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${pct}%; background:${pctColor}"></div></div>
+          <span style="font-size:11px; color:${pctColor}; font-weight:700;">${total}/${e.maxH}h</span>
+        </div>
+      </div>
+      <div class="list-item-actions">
+        <button class="btn-icon" onclick="event.stopPropagation(); editEnseignant('${e.id}')">✏️</button>
+        <button class="btn-icon" style="color:#ef4444" onclick="event.stopPropagation(); deleteEnseignant('${e.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════
+// MODULES
+// ═══════════════════════════════
+function getTotalH(m) {
+  return ((parseInt(m.cm)||0) + (parseInt(m.td)||0) + (parseInt(m.tp)||0)) * (parseInt(m.semaines)||16);
+}
+function fillModuleSelects() {
+  const sel = document.getElementById('m-filiere');
+  sel.innerHTML = data.filieres.map(f => `<option value="${f.id}">${f.nom}</option>`).join('') || '<option>— أضف شعبة أولاً —</option>';
+  const selE = document.getElementById('m-enseignant');
+  selE.innerHTML = '<option value="">— اختر أستاذاً —</option>' +
+    data.enseignants.map(e => `<option value="${e.id}">${e.nom} ${e.prenom||''}</option>`).join('');
+  // clear edit
+  document.getElementById('m-edit-id').value = '';
+  document.getElementById('m-nom').value = '';
+  ['m-cm','m-td','m-tp'].forEach(id => document.getElementById(id).value = 0);
+  document.getElementById('m-semaines').value = 16;
+  document.getElementById('modal-module').querySelector('.modal-title').textContent = '📚 إضافة مادة';
+}
+function saveModule() {
+  const nom = document.getElementById('m-nom').value.trim();
+  const filiereId = document.getElementById('m-filiere').value;
+  if (!nom) { toast('أدخل اسم المادة', '#ef4444'); return; }
+  if (!filiereId) { toast('اختر شعبة', '#ef4444'); return; }
+  const editId = document.getElementById('m-edit-id').value;
+  const obj = {
+    id: editId || uid(),
+    nom, filiereId,
+    enseignantId: document.getElementById('m-enseignant').value,
+    cm: parseInt(document.getElementById('m-cm').value)||0,
+    td: parseInt(document.getElementById('m-td').value)||0,
+    tp: parseInt(document.getElementById('m-tp').value)||0,
+    semaines: parseInt(document.getElementById('m-semaines').value)||16,
+    semestre: document.getElementById('m-semestre').value
+  };
+  if (editId) {
+    const idx = data.modules.findIndex(m => m.id === editId);
+    if (idx !== -1) data.modules[idx] = obj;
+  } else {
+    data.modules.push(obj);
+  }
+  saveData(); hideModal('modal-module'); renderModules(); toast('✅ تم حفظ المادة');
+}
+function editModule(id) {
+  const m = data.modules.find(x => x.id === id);
+  if (!m) return;
+  fillModuleSelects();
+  document.getElementById('m-nom').value = m.nom;
+  document.getElementById('m-filiere').value = m.filiereId;
+  document.getElementById('m-enseignant').value = m.enseignantId || '';
+  document.getElementById('m-cm').value = m.cm;
+  document.getElementById('m-td').value = m.td;
+  document.getElementById('m-tp').value = m.tp;
+  document.getElementById('m-semaines').value = m.semaines;
+  document.getElementById('m-semestre').value = m.semestre;
+  document.getElementById('m-edit-id').value = m.id;
+  document.getElementById('modal-module').querySelector('.modal-title').textContent = '✏️ تعديل المادة';
+  document.getElementById('modal-module').style.display = 'flex';
+}
+function deleteModule(id) {
+  if (!confirm('حذف هذه المادة؟')) return;
+  data.modules = data.modules.filter(m => m.id !== id);
+  saveData(); renderModules(); toast('🗑️ تم الحذف', '#ef4444');
+}
+function renderModules() {
+  // Tabs
+  const tabsEl = document.getElementById('filiere-tabs');
+  tabsEl.innerHTML = `<button class="tab-btn ${currentFiliereTab==='all'?'active':''}" onclick="setFiliereTab('all')">الكل</button>` +
+    data.filieres.map(f => `<button class="tab-btn ${currentFiliereTab===f.id?'active':''}" onclick="setFiliereTab('${f.id}')">${f.code||f.nom}</button>`).join('');
+
+  const list = document.getElementById('list-modules');
+  let mods = data.modules;
+  if (currentFiliereTab !== 'all') mods = mods.filter(m => m.filiereId === currentFiliereTab);
+  if (!mods.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📚</div><div class="empty-text">لا توجد مواد، أضف مادة جديدة!</div></div>`;
+    return;
+  }
+  list.innerHTML = mods.map(m => {
+    const f = data.filieres.find(x => x.id === m.filiereId);
+    const e = data.enseignants.find(x => x.id === m.enseignantId);
+    const total = getTotalH(m);
+    return `
+    <div class="list-item">
+      <div class="list-item-icon" style="background:rgba(16,185,129,0.15); font-size:20px;">📖</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${m.nom}</div>
+        <div class="list-item-sub" style="margin-bottom:4px;">
+          ${f ? `<span class="badge badge-purple">${f.code||f.nom}</span> ` : ''}
+          ${m.semestre ? `<span class="badge badge-blue">${m.semestre}</span> ` : ''}
+        </div>
+        <div style="font-size:11px; color:var(--text2);">
+          🎙️CM: ${m.cm*m.semaines}h &nbsp; 📝TD: ${m.td*m.semaines}h &nbsp; 🔬TP: ${m.tp*m.semaines}h &nbsp;
+          <strong style="color:var(--primary-light)">= ${total}h</strong>
+        </div>
+        ${e ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">👤 ${e.nom} ${e.prenom||''}</div>` : ''}
+      </div>
+      <div class="list-item-actions">
+        <button class="btn-icon" onclick="editModule('${m.id}')">✏️</button>
+        <button class="btn-icon" style="color:#ef4444" onclick="deleteModule('${m.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function setFiliereTab(id) { currentFiliereTab = id; renderModules(); }
+
+// ═══════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════
+function renderDashboard() {
+  document.getElementById('s-enseignants').textContent = data.enseignants.length;
+  document.getElementById('s-modules').textContent = data.modules.length;
+  document.getElementById('s-filieres').textContent = data.filieres.length;
+  const totalH = data.modules.reduce((s, m) => s + getTotalH(m), 0);
+  document.getElementById('s-total-h').textContent = totalH;
+  const cm = data.modules.reduce((s, m) => s + m.cm * m.semaines, 0);
+  const td = data.modules.reduce((s, m) => s + m.td * m.semaines, 0);
+  const tp = data.modules.reduce((s, m) => s + m.tp * m.semaines, 0);
+  document.getElementById('s-cm').textContent = cm;
+  document.getElementById('s-td').textContent = td;
+  document.getElementById('s-tp').textContent = tp;
+  const avg = data.enseignants.length > 0 ? Math.round(totalH / data.enseignants.length) : 0;
+  document.getElementById('s-avg').textContent = avg;
+
+  // Chart
+  const labels = data.enseignants.map(e => e.nom);
+  const vals = data.enseignants.map(e => getEnseignantH(e.id));
+  const empty = document.getElementById('chart-empty');
+  if (!labels.length) {
+    empty.style.display = 'block';
+    if (chartEns) { chartEns.destroy(); chartEns = null; }
+    return;
+  }
+  empty.style.display = 'none';
+  const ctx = document.getElementById('chartEnseignants').getContext('2d');
+  if (chartEns) chartEns.destroy();
+  chartEns = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'الحجم الساعي (ساعة)',
+        data: vals,
+        backgroundColor: vals.map((v,i) => `hsl(${230 + i*25},70%,60%)`),
+        borderRadius: 8, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { family: 'Cairo' } }, grid: { color: '#1e293b' } },
+        y: { ticks: { color: '#94a3b8', font: { family: 'Cairo' } }, grid: { color: '#334155' } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════
+// STATS
+// ═══════════════════════════════
+function renderStats() {
+  // Table
+  const tbody = document.getElementById('tbody-stats');
+  if (!data.enseignants.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);">لا يوجد أساتذة بعد</td></tr>';
+  } else {
+    const totalDept = data.modules.reduce((s, m) => s + getTotalH(m), 0);
+    tbody.innerHTML = data.enseignants.map(e => {
+      const mods = data.modules.filter(m => m.enseignantId === e.id);
+      const cm = mods.reduce((s, m) => s + m.cm * m.semaines, 0);
+      const td = mods.reduce((s, m) => s + m.td * m.semaines, 0);
+      const tp = mods.reduce((s, m) => s + m.tp * m.semaines, 0);
+      const tot = cm + td + tp;
+      const pct = e.maxH > 0 ? Math.min(100, Math.round(tot / e.maxH * 100)) : 0;
+      const c = pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#10b981';
+      return `<tr>
+        <td><div style="font-weight:700">${e.nom} ${e.prenom||''}</div><div style="font-size:10px;color:var(--text3)">${e.grade}</div></td>
+        <td><span class="badge badge-blue">${cm}h</span></td>
+        <td><span class="badge badge-green">${td}h</span></td>
+        <td><span class="badge badge-amber">${tp}h</span></td>
+        <td>
+          <div style="font-weight:800;color:${c}">${tot}h</div>
+          <div class="progress-bar" style="width:80px;margin-top:4px"><div class="progress-fill" style="width:${pct}%;background:${c}"></div></div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Pie
+  const cm = data.modules.reduce((s, m) => s + m.cm * m.semaines, 0);
+  const td = data.modules.reduce((s, m) => s + m.td * m.semaines, 0);
+  const tp = data.modules.reduce((s, m) => s + m.tp * m.semaines, 0);
+  const ctx2 = document.getElementById('chartPie').getContext('2d');
+  if (chartPie) chartPie.destroy();
+  chartPie = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: ['محاضرات CM', 'أعمال موجهة TD', 'أعمال تطبيقية TP'],
+      datasets: [{ data: [cm, td, tp], backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'], borderWidth: 0, hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Cairo' }, padding: 12 } } }
+    }
+  });
+
+  // Bar Filières
+  const ctx3 = document.getElementById('chartFilieres').getContext('2d');
+  if (chartFil) chartFil.destroy();
+  chartFil = new Chart(ctx3, {
+    type: 'bar',
+    data: {
+      labels: data.filieres.map(f => f.code || f.nom),
+      datasets: [
+        { label: 'CM', data: data.filieres.map(f => data.modules.filter(m=>m.filiereId===f.id).reduce((s,m)=>s+m.cm*m.semaines,0)), backgroundColor: '#3b82f6', borderRadius: 4 },
+        { label: 'TD', data: data.filieres.map(f => data.modules.filter(m=>m.filiereId===f.id).reduce((s,m)=>s+m.td*m.semaines,0)), backgroundColor: '#10b981', borderRadius: 4 },
+        { label: 'TP', data: data.filieres.map(f => data.modules.filter(m=>m.filiereId===f.id).reduce((s,m)=>s+m.tp*m.semaines,0)), backgroundColor: '#f59e0b', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Cairo' } } } },
+      scales: {
+        x: { stacked: true, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+        y: { stacked: true, ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════
+// FORECAST
+// ═══════════════════════════════
+function calcForecast() {
+  const growth = parseFloat(document.getElementById('growth-rate').value) / 100 || 0;
+  const newFil = parseInt(document.getElementById('new-filieres').value) || 0;
+  const newEns = parseInt(document.getElementById('new-enseignants').value) || 0;
+  const totalH = data.modules.reduce((s, m) => s + getTotalH(m), 0);
+  const cm = data.modules.reduce((s, m) => s + m.cm * m.semaines, 0);
+  const td = data.modules.reduce((s, m) => s + m.td * m.semaines, 0);
+  const tp = data.modules.reduce((s, m) => s + m.tp * m.semaines, 0);
+  const avgH = data.enseignants.length > 0 ? Math.round(totalH / data.enseignants.length) : 0;
+  const totalFuturs = data.filieres.length + newFil;
+  const totalEns = data.enseignants.length + newEns;
+  const forecastH = Math.round(totalH * (1 + growth));
+  const avgForecast = totalEns > 0 ? Math.round(forecastH / totalEns) : 0;
+
+  document.getElementById('forecast-content').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card purple">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-value">${totalH}</div>
+        <div class="stat-label">الحجم الحالي</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">📈</div>
+        <div class="stat-value">${forecastH}</div>
+        <div class="stat-label">الحجم المتوقع</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon">👨‍🏫</div>
+        <div class="stat-value">${totalEns}</div>
+        <div class="stat-label">إجمالي الأساتذة</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon">⚖️</div>
+        <div class="stat-value">${avgForecast}</div>
+        <div class="stat-label">متوسط/أستاذ</div>
+      </div>
+    </div>
+    <div style="font-size:12px; color:var(--text2); margin-top:8px;">
+      📊 الزيادة المتوقعة: <strong style="color:var(--primary-light)">+${Math.round(growth*100)}%</strong> · 
+      الشعب المستقبلية: <strong style="color:var(--accent)">${totalFuturs}</strong>
+    </div>
+  `;
+
+  // Per teacher forecast
+  const tEl = document.getElementById('forecast-teachers');
+  if (!data.enseignants.length) {
+    tEl.innerHTML = '<div class="empty"><div class="empty-text">أضف أساتذة لرؤية التوقعات الفردية</div></div>';
+    return;
+  }
+  const maxVal = Math.max(...data.enseignants.map(e => Math.round(getEnseignantH(e.id) * (1 + growth))), 1);
+  tEl.innerHTML = data.enseignants.map(e => {
+    const curr = getEnseignantH(e.id);
+    const fut = Math.round(curr * (1 + growth));
+    const pct = Math.round(fut / maxVal * 100);
+    const overload = fut > e.maxH;
+    return `<div class="forecast-bar">
+      <div class="forecast-label">${e.nom} ${e.prenom||''}</div>
+      <div class="forecast-track"><div class="progress-fill" style="width:${pct}%; background:${overload?'#ef4444':'#6366f1'}"></div></div>
+      <div class="forecast-value" style="color:${overload?'#ef4444':'var(--text)'};">${fut}h ${overload?'⚠️':''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════
+// INIT
+// ═══════════════════════════════
+loadData();
+renderDashboard();
+
+// PWA service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
